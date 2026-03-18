@@ -69,7 +69,47 @@ const [clientError, setClientError] = useState('')
     fetchComments(findings.map(f => f.id))
   }
 
-  const submitFinding = async () => {
+  const submitFinding = async () => {const submitClient = async () => {
+  if (!newClient.name || !newClient.email || !newClient.password) {
+    setClientError('Tüm alanları doldurun.')
+    return
+  }
+  setSavingClient(true)
+  setClientError('')
+
+  // Önce clients tablosuna ekle
+  const { data: clientData, error: clientError } = await supabase
+    .from('clients')
+    .insert({ name: newClient.name, email: newClient.email })
+    .select()
+    .single()
+
+  if (clientError) { setClientError(clientError.message); setSavingClient(false); return }
+
+  // Edge function ile kullanıcı oluştur
+  const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/create-user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+    },
+    body: JSON.stringify({
+      email: newClient.email,
+      password: newClient.password,
+      full_name: newClient.full_name || newClient.name,
+      company_id: clientData.id
+    })
+  })
+
+  const result = await res.json()
+  if (result.error) { setClientError(result.error); setSavingClient(false); return }
+
+  setSavingClient(false)
+  setShowNewClient(false)
+  setNewClient({ name:'', email:'', password:'', full_name:'' })
+  fetchClients()
+  alert('Müşteri başarıyla eklendi!')
+}
     if (!newFinding.title) return
     const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
     await supabase.from('findings').insert({ ...newFinding, finding_id: findingId, cvss_score: parseFloat(newFinding.cvss_score) || null })
