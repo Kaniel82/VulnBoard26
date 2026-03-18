@@ -35,12 +35,14 @@ export default function Dashboard({ profile, onLogout }) {
   const fetchFindings = async () => {
     setLoading(true)
     let query = supabase.from('findings').select('*, clients(name)').order('created_at', { ascending: false })
+    if (!isPentest) {
+      query = query.eq('client_id', profile.company)
+    }
     const { data } = await query
     setFindings(data || [])
     if (data?.length) fetchComments(data.map(f => f.id))
     setLoading(false)
   }
-
   const fetchClients = async () => {
     const { data } = await supabase.from('clients').select('*')
     setClients(data || [])
