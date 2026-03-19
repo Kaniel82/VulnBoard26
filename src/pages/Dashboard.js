@@ -200,7 +200,7 @@ export default function Dashboard({ profile, onLogout }) {
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                   <thead>
                     <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
-                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Durum', 'Yorumlar', 'Tarih'].filter(Boolean).map(h => (
+                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Referanslar', 'Durum', 'Yorumlar', 'Tarih'].filter(Boolean).map(h => (
                         <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:400 }}>{h}</th>
                       ))}
                     </tr>
@@ -215,6 +215,18 @@ export default function Dashboard({ profile, onLogout }) {
                         <td style={{ padding:'10px', color:'#374151' }}>{f.title}</td>
                         <td style={{ padding:'10px' }}><Badge type={f.level} label={levelLabel[f.level]} /></td>
                         <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color: f.cvss_score >= 9 ? '#dc2626' : f.cvss_score >= 7 ? '#ea580c' : f.cvss_score >= 4 ? '#ca8a04' : '#16a34a' }}>{f.cvss_score || '-'}</td>
+                        <td style={{ padding:'10px' }}>
+                          {f.impact_category ? (
+                            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                              {f.impact_category.split(', ').map(cat => (
+                                <span key={cat} style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe' }}>{cat}</span>
+                              ))}
+                            </div>
+                          ) : <span style={{ fontSize:11, color:'#9ca3af' }}>-</span>}
+                        </td>
+                        <td style={{ padding:'10px', fontSize:11, color:'#2563eb', fontFamily:'monospace', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {f.references_links ? f.references_links.split('\n')[0].slice(0,30)+'...' : <span style={{ color:'#9ca3af' }}>-</span>}
+                        </td>
                         <td style={{ padding:'10px' }}><Badge type={f.status} label={statusLabel[f.status]} /></td>
                         <td style={{ padding:'10px' }}>
                           <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontFamily:'monospace', padding:'2px 8px', borderRadius:10, ...(comments[f.id]?.length > 0 ? { background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe' } : { background:'#f3f4f6', color:'#9ca3af', border:'0.5px solid #e5e7eb' }) }}>
