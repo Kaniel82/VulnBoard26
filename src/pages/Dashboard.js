@@ -28,7 +28,7 @@ export default function Dashboard({ profile, onLogout }) {
   const [clients, setClients] = useState([])
   const [savingClient, setSavingClient] = useState(false)
   const [clientErrMsg, setClientErrMsg] = useState('')
-  const [newFinding, setNewFinding] = useState({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', client_id:'' })
+  const [newFinding, setNewFinding] = useState({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', client_id:'' })
   const [newClient, setNewClient] = useState({ name:'', email:'', password:'', full_name:'' })
 
   const isPentest = profile?.role === 'pentest'
@@ -76,9 +76,14 @@ export default function Dashboard({ profile, onLogout }) {
   const submitFinding = async () => {
     if (!newFinding.title) return
     const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
-    await supabase.from('findings').insert({ ...newFinding, finding_id: findingId, cvss_score: parseFloat(newFinding.cvss_score) || null })
+    await supabase.from('findings').insert({ 
+      ...newFinding, 
+      finding_id: findingId, 
+      cvss_score: parseFloat(newFinding.cvss_score) || null,
+      impact_category: newFinding.impact_category.join(', ')
+    })
     setShowNewFinding(false)
-    setNewFinding({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', client_id:'' })
+    setNewFinding({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', client_id:'' })
     fetchFindings()
   }
 
@@ -95,7 +100,7 @@ export default function Dashboard({ profile, onLogout }) {
       .select()
       .single()
     if (cErr) { setClientErrMsg(cErr.message); setSavingClient(false); return }
-    const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/bright-responder`, {
+    const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/create-user`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ email: newClient.email, password: newClient.password, full_name: newClient.full_name || newClient.name, company_id: clientData.id })
@@ -272,7 +277,26 @@ export default function Dashboard({ profile, onLogout }) {
                 <Badge type={selectedFinding.level} label={levelLabel[selectedFinding.level]} />
                 <span style={{ fontFamily:'monospace', fontSize:11, padding:'2px 8px', background:'#f3f4f6', borderRadius:4 }}>CVSS {selectedFinding.cvss_score || '-'}</span>
                 <Badge type={selectedFinding.status} label={statusLabel[selectedFinding.status]} />
+                {selectedFinding.impact_category && (
+                  <span style={{ fontFamily:'monospace', fontSize:11, padding:'2px 8px', background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe', borderRadius:4 }}>
+                    🎯 {selectedFinding.impact_category}
+                  </span>
+                )}
               </div>
+
+              {selectedFinding.references_links && (
+                <div style={{ marginBottom:14, padding:'10px 12px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6 }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Referanslar</div>
+                  <div style={{ fontSize:12, color:'#2563eb', fontFamily:'monospace', whiteSpace:'pre-wrap', lineHeight:1.6 }}>{selectedFinding.references_links}</div>
+                </div>
+              )}
+
+              {selectedFinding.closure_note && (
+                <div style={{ marginBottom:14, padding:'10px 12px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:6 }}>
+                  <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Kapanış Notu</div>
+                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.closure_note}</div>
+                </div>
+              )}
               <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
                 Yorumlar
                 <span style={{ fontSize:9, padding:'2px 7px', borderRadius:4, background:'#f0fdf4', color:'#16a34a', border:'0.5px solid #bbf7d0' }}>🔗 Ortak Alan</span>
@@ -321,22 +345,22 @@ export default function Dashboard({ profile, onLogout }) {
 
       {showNewFinding && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', padding:12 }}>
-          <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:10, width:480, maxWidth:'100%' }}>
-            <div style={{ padding:'16px 20px', borderBottom:'0.5px solid #e5e7eb' }}>
+          <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:10, width:520, maxWidth:'100%', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'16px 20px', borderBottom:'0.5px solid #e5e7eb', flexShrink:0 }}>
               <div style={{ fontSize:13, fontWeight:500 }}>Yeni Bulgu Ekle</div>
             </div>
-            <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:12 }}>
-              {[['Başlık', 'title', 'text'], ['CVSS Skoru', 'cvss_score', 'number'], ['Impact Area', 'impact_area', 'text']].map(([label, key, type]) => (
-                <div key={key}>
-                  <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>{label}</label>
-                  <input type={type} value={newFinding[key]} onChange={e => setNewFinding({ ...newFinding, [key]: e.target.value })}
-                    style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
-                </div>
-              ))}
+            <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:12, overflowY:'auto' }}>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Başlık</label>
+                <input type="text" value={newFinding.title} onChange={e => setNewFinding({...newFinding, title: e.target.value})}
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+              </div>
+
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div>
                   <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Seviye</label>
-                  <select value={newFinding.level} onChange={e => setNewFinding({ ...newFinding, level: e.target.value })}
+                  <select value={newFinding.level} onChange={e => setNewFinding({...newFinding, level: e.target.value})}
                     style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
                     <option value="kritik">Kritik</option>
                     <option value="yuksek">Yüksek</option>
@@ -346,7 +370,7 @@ export default function Dashboard({ profile, onLogout }) {
                 </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Durum</label>
-                  <select value={newFinding.status} onChange={e => setNewFinding({ ...newFinding, status: e.target.value })}
+                  <select value={newFinding.status} onChange={e => setNewFinding({...newFinding, status: e.target.value})}
                     style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
                     <option value="acik">Açık</option>
                     <option value="devam">Devam Ediyor</option>
@@ -354,18 +378,60 @@ export default function Dashboard({ profile, onLogout }) {
                   </select>
                 </div>
               </div>
-              {clients.length > 0 && (
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div>
+                  <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>CVSS Skoru</label>
+                  <input type="number" value={newFinding.cvss_score} onChange={e => setNewFinding({...newFinding, cvss_score: e.target.value})} min="0" max="10" step="0.1"
+                    style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+                </div>
                 <div>
                   <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Müşteri</label>
-                  <select value={newFinding.client_id} onChange={e => setNewFinding({ ...newFinding, client_id: e.target.value })}
+                  <select value={newFinding.client_id} onChange={e => setNewFinding({...newFinding, client_id: e.target.value})}
                     style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
-                    <option value="">Müşteri seç...</option>
+                    <option value="">Seç...</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
-              )}
+              </div>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8 }}>Etki Alanı</label>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {['Network', 'Web', 'Mobile', 'API', 'Cloud', 'Active Directory', 'IoT', 'Other'].map(cat => (
+                    <label key={cat} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+                      <input type="checkbox" checked={newFinding.impact_category.includes(cat)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setNewFinding({...newFinding, impact_category: [...newFinding.impact_category, cat]})
+                          } else {
+                            setNewFinding({...newFinding, impact_category: newFinding.impact_category.filter(c => c !== cat)})
+                          }
+                        }} />
+                      <span style={{ fontSize:12, color: newFinding.impact_category.includes(cat) ? '#111' : '#6b7280',
+                        background: newFinding.impact_category.includes(cat) ? '#f3f4f6' : 'transparent',
+                        padding:'3px 8px', borderRadius:4, border:'0.5px solid #e5e7eb' }}>{cat}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Referanslar</label>
+                <textarea value={newFinding.references_links} onChange={e => setNewFinding({...newFinding, references_links: e.target.value})}
+                  placeholder="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-XXXX&#10;https://owasp.org/www-project-top-ten/..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:60, fontFamily:'monospace' }} />
+              </div>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Kapanış Notu</label>
+                <textarea value={newFinding.closure_note} onChange={e => setNewFinding({...newFinding, closure_note: e.target.value})}
+                  placeholder="Bulgu nasıl kapatıldı, hangi adımlar izlendi..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:60, fontFamily:'sans-serif' }} />
+              </div>
+
             </div>
-            <div style={{ padding:'12px 20px', borderTop:'0.5px solid #e5e7eb', display:'flex', gap:8, justifyContent:'flex-end' }}>
+            <div style={{ padding:'12px 20px', borderTop:'0.5px solid #e5e7eb', display:'flex', gap:8, justifyContent:'flex-end', flexShrink:0 }}>
               <button onClick={() => setShowNewFinding(false)} style={{ background:'transparent', border:'0.5px solid #e5e7eb', color:'#6b7280', padding:'7px 14px', borderRadius:6, fontSize:11, cursor:'pointer' }}>İptal</button>
               <button onClick={submitFinding} style={{ background:'#111', color:'#fff', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>Kaydet</button>
             </div>
