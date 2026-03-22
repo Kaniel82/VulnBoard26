@@ -335,7 +335,7 @@ const updateFinding = async () => {
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                   <thead>
                     <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
-                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'Yorumlar', 'Tarih', isPentest ? 'İşlem' : null].filter(Boolean).map(h => (
+                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'Yorumlar', 'Tarih','ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'Yorumlar', 'Tarih', isPentest ? 'İşlem' : null isPentest ? 'İşlem' : null].filter(Boolean).map(h => (
                         <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:400 }}>{h}</th>
                       ))}
                     </tr>
