@@ -61,12 +61,8 @@ export default function Dashboard({ profile, onLogout }) {
   const [commentText, setCommentText] = useState('')
   const [commentName, setCommentName] = useState(profile?.full_name || '')
   const [showModal, setShowModal] = useState(false)
-  
-  const [showEditModal, setShowEditModal] = useState(false)
-
   const [showEditModal, setShowEditModal] = useState(false)
   const [editFinding, setEditFinding] = useState(null)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [showNewFinding, setShowNewFinding] = useState(false)
   const [showNewClient, setShowNewClient] = useState(false)
   const [activePage, setActivePage] = useState('dashboard')
