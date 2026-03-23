@@ -685,7 +685,78 @@ const updateFinding = async () => {
           </div>
         </div>
       )}
-
+{showEditModal && editFinding && (
+  <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', padding:12 }}>
+    <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:10, width:520, maxWidth:'100%', maxHeight:'90vh', display:'flex', flexDirection:'column' }}>
+      <div style={{ padding:'16px 20px', borderBottom:'0.5px solid #e5e7eb', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ fontSize:13, fontWeight:500 }}>Bulgu Düzenle</div>
+        <span style={{ fontFamily:'monospace', fontSize:11, color:'#9ca3af', background:'#f3f4f6', padding:'3px 8px', borderRadius:4 }}>{editFinding.finding_id}</span>
+      </div>
+      <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:12, overflowY:'auto' }}>
+        <div>
+          <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Başlık</label>
+          <input type="text" value={editFinding.title} onChange={e => setEditFinding({...editFinding, title: e.target.value})}
+            style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <div>
+            <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Seviye</label>
+            <select value={editFinding.level} onChange={e => setEditFinding({...editFinding, level: e.target.value})}
+              style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
+              <option value="kritik">Kritik</option>
+              <option value="yuksek">Yüksek</option>
+              <option value="orta">Orta</option>
+              <option value="dusuk">Düşük</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Durum</label>
+            <select value={editFinding.status} onChange={e => setEditFinding({...editFinding, status: e.target.value})}
+              style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
+              <option value="acik">Açık</option>
+              <option value="devam">Devam Ediyor</option>
+              <option value="kapali">Kapatıldı</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>CVSS Skoru</label>
+          <input type="number" value={editFinding.cvss_score || ''} onChange={e => setEditFinding({...editFinding, cvss_score: e.target.value})} min="0" max="10" step="0.1"
+            style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:8 }}>Etki Alanı</label>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {['Network', 'Web', 'Mobile', 'API', 'Cloud', 'Active Directory', 'IoT', 'Other'].map(cat => (
+              <label key={cat} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer' }}>
+                <input type="checkbox" checked={editFinding.impact_category.includes(cat)}
+                  onChange={e => {
+                    if (e.target.checked) setEditFinding({...editFinding, impact_category: [...editFinding.impact_category, cat]})
+                    else setEditFinding({...editFinding, impact_category: editFinding.impact_category.filter(c => c !== cat)})
+                  }} />
+                <span style={{ fontSize:12, padding:'3px 8px', borderRadius:4, border:'0.5px solid #e5e7eb', color: editFinding.impact_category.includes(cat) ? '#2563eb' : '#6b7280', background: editFinding.impact_category.includes(cat) ? '#eff6ff' : 'transparent' }}>{cat}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Referanslar</label>
+          <textarea value={editFinding.references_links || ''} onChange={e => setEditFinding({...editFinding, references_links: e.target.value})}
+            style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:56, fontFamily:'monospace' }} />
+        </div>
+        <div>
+          <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Kapanış Notu</label>
+          <textarea value={editFinding.closure_note || ''} onChange={e => setEditFinding({...editFinding, closure_note: e.target.value})}
+            style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:56 }} />
+        </div>
+      </div>
+      <div style={{ padding:'12px 20px', borderTop:'0.5px solid #e5e7eb', display:'flex', gap:8, justifyContent:'flex-end', flexShrink:0 }}>
+        <button onClick={() => setShowEditModal(false)} style={{ background:'transparent', border:'0.5px solid #e5e7eb', color:'#6b7280', padding:'7px 14px', borderRadius:6, fontSize:11, cursor:'pointer' }}>İptal</button>
+        <button onClick={updateFinding} style={{ background:'#111', color:'#fff', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>Güncelle</button>
+      </div>
+    </div>
+  </div>
+)}
       {/* New Client Modal */}
       {showNewClient && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', padding:12 }}>
