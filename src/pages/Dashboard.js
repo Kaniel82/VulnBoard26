@@ -63,7 +63,7 @@ export default function Dashboard({ profile, onLogout }) {
   const [showModal, setShowModal] = useState(false)
   
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editFinding, setEditFinding] = useState(null)
+
   const [showEditModal, setShowEditModal] = useState(false)
   const [editFinding, setEditFinding] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
