@@ -122,6 +122,7 @@ export default function Dashboard({ profile, onLogout }) {
     await supabase.from('findings').delete().eq('id', id)
     fetchFindings()
   }
+
  const quickClose = async (id) => {
     if (!window.confirm('Bu bulguyu kapatmak istediğinize emin misiniz?')) return;
     const { error } = await supabase.from('findings').update({ status: 'kapali' }).eq('id', id);
