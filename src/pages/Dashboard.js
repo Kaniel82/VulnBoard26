@@ -117,23 +117,19 @@ export default function Dashboard({ profile, onLogout }) {
 
   const deleteFinding = async (e, id) => {
     e.stopPropagation()
-    if (!window.confirm('Bu bulguyu silmek istediğinize emin misiniz?')) return
-    await supabase.from('comments').delete().eq('finding_id', id)
-    await supabase.from('findings').delete().eq('id', id)
-    fetchFindings()
-  }
-
- const quickClose = async (id) => {
+    const quickClose = async (id) => {
     if (!window.confirm('Bu bulguyu kapatmak istediğinize emin misiniz?')) return;
     const { error } = await supabase.from('findings').update({ status: 'kapali' }).eq('id', id);
     if (error) alert("Hata: " + error.message);
     else fetchFindings();
   };
+
   const openEditModal = (e, finding) => {
     e.stopPropagation()
     setEditFinding({ ...finding, impact_category: finding.impact_category ? finding.impact_category.split(', ') : [] })
     setShowEditModal(true)
   }
+
   const deleteFinding = async (e, id) => {
     e.stopPropagation()
     if (!window.confirm('Bu bulguyu silmek istediğinize emin misiniz?')) return
@@ -141,6 +137,7 @@ export default function Dashboard({ profile, onLogout }) {
     await supabase.from('findings').delete().eq('id', id)
     fetchFindings()
   }
+
   const updateFinding = async () => {
     if (!editFinding.title) return
     await supabase.from('findings').update({
@@ -157,67 +154,6 @@ export default function Dashboard({ profile, onLogout }) {
     setEditFinding(null)
     fetchFindings()
   }
-    const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/bright-responder`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ email: newClient.email, password: newClient.password, full_name: newClient.full_name || newClient.name, company_id: clientData.id })
-    })
-    const result = await res.json()
-    if (result.error) { setClientErrMsg(result.error); setSavingClient(false); return }
-    setSavingClient(false)
-    setShowNewClient(false)
-    setNewClient({ name:'', email:'', password:'', full_name:'' })
-    fetchClients()
-    alert('Müşteri başarıyla eklendi!')
-  }
-
-  const stats = {
-    total: findings.length,
-    critical: findings.filter(f => f.level === 'kritik').length,
-    open: findings.filter(f => f.status === 'acik' || f.status === 'devam').length,
-    closed: findings.filter(f => f.status === 'kapali').length,
-  }
-
-  const navItems = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'findings', label: isPentest ? 'Tüm Bulgular' : 'Bulgularım' },
-    { key: 'clients', label: 'Müşteriler' },
-    { key: 'reports', label: 'Raporlar' },
-  ]
-
-  return (
-    <div style={{ display:'flex', height:'100vh', fontFamily:'sans-serif', background:'#f8f9fa' }}>
-      <div style={{ width:210, background:'#fff', borderRight:'0.5px solid #e5e7eb', display:'flex', flexDirection:'column', padding:'20px 0', flexShrink:0 }}>
-        <div style={{ padding:'0 18px 18px', borderBottom:'0.5px solid #e5e7eb', marginBottom:14 }}>
-          <div style={{ fontSize:15, fontWeight:700, color:'#111' }}>VulnBoard</div>
-          <span style={{ fontSize:9, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, marginTop:4, display:'inline-block', ...(isPentest ? { background:'#fef2f2', color:'#dc2626', border:'0.5px solid #fecaca' } : { background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe' }) }}>
-            {isPentest ? 'Pentest Paneli' : 'Müşteri Paneli'}
-          </span>
-        </div>
-        {navItems.map(item => {
-          if (item.key === 'clients' && !isPentest) return null
-          return (
-            <div key={item.key} onClick={() => setActivePage(item.key)}
-              style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 18px', fontSize:12, color: activePage===item.key ? '#111' : '#6b7280', background: activePage===item.key ? '#f3f4f6' : 'transparent', borderLeft: activePage===item.key ? '2px solid #111' : '2px solid transparent', cursor:'pointer' }}>
-              {item.label}
-            </div>
-          )
-        })}
-        <div style={{ marginTop:'auto', padding:'0 18px' }}>
-          <div style={{ fontSize:11, color:'#9ca3af', marginBottom:8, fontFamily:'monospace' }}>{profile?.email}</div>
-          <button onClick={onLogout} style={{ width:'100%', background:'transparent', border:'0.5px solid #e5e7eb', borderRadius:6, padding:8, fontSize:11, color:'#6b7280', cursor:'pointer' }}>Çıkış Yap</button>
-        </div>
-      </div>
-
-      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        <div style={{ padding:'14px 20px', borderBottom:'0.5px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#fff', flexShrink:0 }}>
-          <div style={{ fontSize:14, fontWeight:500 }}>
-            {activePage === 'dashboard' && 'Dashboard'}
-            {activePage === 'findings' && (isPentest ? 'Tüm Bulgular' : 'Bulgularım')}
-            {activePage === 'clients' && 'Müşteriler'}
-            {activePage === 'reports' && 'Raporlar'}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {isPentest && (activePage === 'findings' || activePage === 'dashboard') && (
               <button onClick={() => setShowNewFinding(true)} style={{ background:'#111', color:'#fff', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>
             )}
