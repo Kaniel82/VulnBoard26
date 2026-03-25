@@ -122,42 +122,17 @@ export default function Dashboard({ profile, onLogout }) {
     await supabase.from('findings').delete().eq('id', id)
     fetchFindings()
   }
-
-  const updateFinding = async () => {
-    if (!editFinding.title) return
-    await supabase.from('findings').update({
-      title: editFinding.title,
-      level: editFinding.level,
-      status: editFinding.status,
-      cvss_score: parseFloat(editFinding.cvss_score) || null,
-      impact_category: editFinding.impact_category.join(', '),
-      references_links: editFinding.references_links,
-      closure_note: editFinding.closure_note,
-      client_id: editFinding.client_id
-    }).eq('id', editFinding.id)
-    setShowEditModal(false)
-    setEditFinding(null)
-    fetchFindings()
-  }
-const updateFinding = async () => {
-    // mevcut kodunuz...
-    fetchFindings()
-  } // <--- Bu parantezi bulun
-
-  // YENİ FONKSİYON BURAYA:
-  const quickClose = async (id) => {
+ const quickClose = async (id) => {
     if (!window.confirm('Bu bulguyu kapatmak istediğinize emin misiniz?')) return;
     const { error } = await supabase.from('findings').update({ status: 'kapali' }).eq('id', id);
     if (error) alert("Hata: " + error.message);
     else fetchFindings();
   };
-
   const openEditModal = (e, finding) => {
     e.stopPropagation()
     setEditFinding({ ...finding, impact_category: finding.impact_category ? finding.impact_category.split(', ') : [] })
     setShowEditModal(true)
   }
-
   const deleteFinding = async (e, id) => {
     e.stopPropagation()
     if (!window.confirm('Bu bulguyu silmek istediğinize emin misiniz?')) return
@@ -165,7 +140,6 @@ const updateFinding = async () => {
     await supabase.from('findings').delete().eq('id', id)
     fetchFindings()
   }
-
   const updateFinding = async () => {
     if (!editFinding.title) return
     await supabase.from('findings').update({
@@ -182,42 +156,6 @@ const updateFinding = async () => {
     setEditFinding(null)
     fetchFindings()
   }
-
-  const submitComment = async () => {
-    if (!commentText.trim()) return
-    await supabase.from('comments').insert({ finding_id: selectedFinding.id, author_name: commentName || 'Anonim', author_role: profile.role, content: commentText })
-    setCommentText('')
-    fetchComments(findings.map(f => f.id))
-  }
-
-  const updateCvssParam = (key, value) => {
-    const newParams = { ...cvssParams, [key]: value }
-    setCvssParams(newParams)
-    const score = calcCVSSScore(newParams)
-    setNewFinding(prev => ({ ...prev, cvss_score: score.toString() }))
-  }
-
-  const submitFinding = async () => {
-    if (!newFinding.title) return
-    const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
-    await supabase.from('findings').insert({
-      ...newFinding,
-      finding_id: findingId,
-      cvss_score: parseFloat(newFinding.cvss_score) || null,
-      impact_category: newFinding.impact_category.join(', ')
-    })
-    setShowNewFinding(false)
-    setNewFinding({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', client_id:'' })
-    setCvssParams({ av:'0.85', ac:'0.77', pr:'0.85', ui:'0.85', c:'0.56', i:'0.56' })
-    fetchFindings()
-  }
-
-  const submitClient = async () => {
-    if (!newClient.name || !newClient.email || !newClient.password) { setClientErrMsg('Tüm alanları doldurun.'); return }
-    setSavingClient(true)
-    setClientErrMsg('')
-    const { data: clientData, error: cErr } = await supabase.from('clients').insert({ name: newClient.name, email: newClient.email }).select().single()
-    if (cErr) { setClientErrMsg(cErr.message); setSavingClient(false); return }
     const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/bright-responder`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}` },
@@ -343,18 +281,24 @@ const updateFinding = async () => {
                             💬 {comments[f.id]?.length || 0}
                           </span>
                         </td>
-                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{f.created_at?.slice(0, 10)}</td>
-                        {isPentest && (
-                          <td style={{ padding:'10px' }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display:'flex', gap:6 }}>
-                              <button onClick={e => openEditModal(e, f)} style={{ background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#374151' }}>✏️ Düzenle</button>
-                              <button onClick={e => deleteFinding(e, f.id)} style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#dc2626' }}>🗑️ Sil</button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
+                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}></td>
+                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>
+  {f.created_at?.slice(0, 10)}
+</td>
+
+<td style={{ padding:'10px' }} onClick={e => e.stopPropagation()}>
+  <div style={{ display:'flex', gap:6 }}>
+    {f.status !== 'kapali' && (
+      <button onClick={() => quickClose(f.id)} style={{ background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>✅</button>
+    )}
+    {isPentest && (
+      <>
+        <button onClick={e => openEditModal(e, f)} style={{ background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>✏️</button>
+        <button onClick={e => deleteFinding(e, f.id)} style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>🗑️</button>
+      </>
+    )}
+  </div>
+</td>
                
                 </table>
               )}
