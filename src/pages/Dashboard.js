@@ -139,7 +139,18 @@ export default function Dashboard({ profile, onLogout }) {
     setEditFinding(null)
     fetchFindings()
   }
+const updateFinding = async () => {
+    // mevcut kodunuz...
+    fetchFindings()
+  } // <--- Bu parantezi bulun
 
+  // YENİ FONKSİYON BURAYA:
+  const quickClose = async (id) => {
+    if (!window.confirm('Bu bulguyu kapatmak istediğinize emin misiniz?')) return;
+    const { error } = await supabase.from('findings').update({ status: 'kapali' }).eq('id', id);
+    if (error) alert("Hata: " + error.message);
+    else fetchFindings();
+  };
 
   const openEditModal = (e, finding) => {
     e.stopPropagation()
@@ -344,9 +355,27 @@ export default function Dashboard({ profile, onLogout }) {
                       </tr>
                     ))}
                   </tbody>
+               
                 </table>
               )}
             </div>
+                <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>
+  {f.created_at?.slice(0, 10)}
+</td>
+
+<td style={{ padding:'10px' }} onClick={e => e.stopPropagation()}>
+  <div style={{ display:'flex', gap:6 }}>
+    {f.status !== 'kapali' && (
+      <button onClick={() => quickClose(f.id)} style={{ background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>✅</button>
+    )}
+    {isPentest && (
+      <>
+        <button onClick={e => openEditModal(e, f)} style={{ background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>✏️</button>
+        <button onClick={e => deleteFinding(e, f.id)} style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:4, padding:'3px 8px', cursor:'pointer' }}>🗑️</button>
+      </>
+    )}
+  </div>
+</td>
           </>
         )}
 
