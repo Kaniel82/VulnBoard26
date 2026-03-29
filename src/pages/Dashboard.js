@@ -141,36 +141,11 @@ export default function Dashboard({ profile, onLogout }) {
   }
 
 
-  const openEditModal = (e, finding) => {
-    e.stopPropagation()
-    setEditFinding({ ...finding, impact_category: finding.impact_category ? finding.impact_category.split(', ') : [] })
-    setShowEditModal(true)
-  }
 
-  const deleteFinding = async (e, id) => {
-    e.stopPropagation()
-    if (!window.confirm('Bu bulguyu silmek istediğinize emin misiniz?')) return
-    await supabase.from('comments').delete().eq('finding_id', id)
-    await supabase.from('findings').delete().eq('id', id)
-    fetchFindings()
-  }
 
-  const updateFinding = async () => {
-    if (!editFinding.title) return
-    await supabase.from('findings').update({
-      title: editFinding.title,
-      level: editFinding.level,
-      status: editFinding.status,
-      cvss_score: parseFloat(editFinding.cvss_score) || null,
-      impact_category: editFinding.impact_category.join(', '),
-      references_links: editFinding.references_links,
-      closure_note: editFinding.closure_note,
-      client_id: editFinding.client_id
-    }).eq('id', editFinding.id)
-    setShowEditModal(false)
-    setEditFinding(null)
-    fetchFindings()
-  }
+
+
+
 
   const submitComment = async () => {
     if (!commentText.trim()) return
