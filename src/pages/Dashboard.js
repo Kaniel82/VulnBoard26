@@ -258,7 +258,126 @@ export default function Dashboard({ profile, onLogout }) {
           </div>
         </div>
 
-        {(activePage === 'dashboard' || activePage === 'findings') && (
+
+        {activePage === 'dashboard' && (
+          <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
+            {/* Stats */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
+              {[['Toplam', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
+                <div key={label} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>{label}</div>
+                  <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color }}>{val}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+              {/* Zafiyet Seviyesi Dağılımı */}
+              <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>Zafiyet Seviyesi Dağılımı</div>
+                {[
+                  { label:'Kritik', count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626', bg:'#fef2f2' },
+                  { label:'Yüksek', count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c', bg:'#fff7ed' },
+                  { label:'Orta',   count: findings.filter(f=>f.level==='orta').length,   color:'#ca8a04', bg:'#fefce8' },
+                  { label:'Düşük',  count: findings.filter(f=>f.level==='dusuk').length,  color:'#16a34a', bg:'#f0fdf4' },
+                ].map(item => (
+                  <div key={item.label} style={{ marginBottom:10 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                      <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
+                      <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
+                    </div>
+                    <div style={{ height:8, background:'#f3f4f6', borderRadius:4, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:4, transition:'width 0.5s' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Durum Dağılımı */}
+              <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>Durum Dağılımı</div>
+                {[
+                  { label:'Açık',      count: findings.filter(f=>f.status==='acik').length,   color:'#2563eb', bg:'#eff6ff' },
+                  { label:'Devam',     count: findings.filter(f=>f.status==='devam').length,   color:'#7c3aed', bg:'#faf5ff' },
+                  { label:'Kapatıldı', count: findings.filter(f=>f.status==='kapali').length,  color:'#16a34a', bg:'#f0fdf4' },
+                ].map(item => (
+                  <div key={item.label} style={{ marginBottom:10 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
+                      <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
+                      <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
+                    </div>
+                    <div style={{ height:8, background:'#f3f4f6', borderRadius:4, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:4, transition:'width 0.5s' }} />
+                    </div>
+                  </div>
+                ))}
+
+                {/* Pasta grafik basit */}
+                <div style={{ marginTop:14, display:'flex', justifyContent:'center' }}>
+                  <div style={{ position:'relative', width:80, height:80 }}>
+                    <svg viewBox="0 0 36 36" style={{ width:80, height:80, transform:'rotate(-90deg)' }}>
+                      {(() => {
+                        const total = findings.length || 1
+                        const acik = findings.filter(f=>f.status==='acik').length
+                        const devam = findings.filter(f=>f.status==='devam').length
+                        const kapali = findings.filter(f=>f.status==='kapali').length
+                        const r = 15.9155
+                        const circ = 2 * Math.PI * r
+                        let offset = 0
+                        const segments = [
+                          { count: acik, color: '#2563eb' },
+                          { count: devam, color: '#7c3aed' },
+                          { count: kapali, color: '#16a34a' },
+                        ]
+                        return segments.map((seg, i) => {
+                          const pct = seg.count / total
+                          const dash = pct * circ
+                          const gap = circ - dash
+                          const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="3.5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset * circ} />
+                          offset += pct
+                          return el
+                        })
+                      })()}
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SLA Performansı */}
+            <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+              <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>SLA Performansı</div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+                {[
+                  { label:'Kritik SLA', target:'24 saat', color:'#dc2626',
+                    closed: findings.filter(f=>f.level==='kritik'&&f.status==='kapali').length,
+                    total: findings.filter(f=>f.level==='kritik').length },
+                  { label:'Yüksek SLA', target:'7 gün', color:'#ea580c',
+                    closed: findings.filter(f=>f.level==='yuksek'&&f.status==='kapali').length,
+                    total: findings.filter(f=>f.level==='yuksek').length },
+                  { label:'Orta SLA', target:'30 gün', color:'#ca8a04',
+                    closed: findings.filter(f=>f.level==='orta'&&f.status==='kapali').length,
+                    total: findings.filter(f=>f.level==='orta').length },
+                ].map(item => {
+                  const rate = item.total > 0 ? Math.round((item.closed / item.total) * 100) : 0
+                  return (
+                    <div key={item.label} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px' }}>
+                      <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace', marginBottom:4 }}>{item.label}</div>
+                      <div style={{ fontSize:10, color:'#9ca3af', marginBottom:8 }}>Hedef: {item.target}</div>
+                      <div style={{ fontSize:24, fontWeight:700, fontFamily:'monospace', color: rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626', marginBottom:6 }}>{rate}%</div>
+                      <div style={{ height:6, background:'#e5e7eb', borderRadius:3, overflow:'hidden' }}>
+                        <div style={{ height:'100%', width:`${rate}%`, background: rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626', borderRadius:3 }} />
+                      </div>
+                      <div style={{ fontSize:10, color:'#9ca3af', marginTop:4, fontFamily:'monospace' }}>{item.closed}/{item.total} kapatıldı</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activePage === 'findings' && (
           <>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'16px 20px', flexShrink:0 }}>
               {[['Toplam', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
