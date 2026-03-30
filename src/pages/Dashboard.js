@@ -1,3 +1,201 @@
+
+const ReportsPage = ({ profile, clients, findings, isPentest }) => {
+  const [selectedClient, setSelectedClient] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [reportType, setReportType] = useState('pdf')
+  const [generatedReports, setGeneratedReports] = useState([])
+
+  const clientFindings = selectedClient
+    ? findings.filter(f => f.client_id === selectedClient)
+    : isPentest ? findings : findings
+
+  const clientName = clients.find(c => c.id === selectedClient)?.name || 'Tüm Müşteriler'
+
+  const stats = {
+    total: clientFindings.length,
+    critical: clientFindings.filter(f => f.level === 'kritik').length,
+    high: clientFindings.filter(f => f.level === 'yuksek').length,
+    medium: clientFindings.filter(f => f.level === 'orta').length,
+    low: clientFindings.filter(f => f.level === 'dusuk').length,
+    closed: clientFindings.filter(f => f.status === 'kapali').length,
+  }
+
+  const slaScore = stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 0
+
+  const generateReport = () => {
+    setGenerating(true)
+    setTimeout(() => {
+      setGenerating(false)
+      const report = {
+        id: Date.now(),
+        title: `${clientName} - Pentest Raporu`,
+        date: new Date().toISOString().slice(0,10),
+        format: reportType,
+        findings: clientFindings.length
+      }
+      setGeneratedReports(prev => [report, ...prev])
+      alert(`${reportType.toUpperCase()} raporu oluşturuldu! Gerçek uygulamada indirilecek.`)
+    }, 2000)
+  }
+
+  const levelLabel = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
+  const statusLabel = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
+  const levelColor = { kritik:'#dc2626', yuksek:'#ea580c', orta:'#ca8a04', dusuk:'#16a34a' }
+
+  return (
+    <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
+      {isPentest && (
+        <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
+          <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Rapor Oluştur</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:10, alignItems:'end' }}>
+            <div>
+              <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Müşteri</label>
+              <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
+                style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
+                <option value="">Tüm Müşteriler</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Format</label>
+              <div style={{ display:'flex', border:'0.5px solid #e5e7eb', borderRadius:6, overflow:'hidden' }}>
+                {['pdf','excel'].map(f => (
+                  <button key={f} onClick={() => setReportType(f)}
+                    style={{ flex:1, padding:'7px', fontSize:11, cursor:'pointer', background: reportType===f?'#111':'#fff', color: reportType===f?'#fff':'#6b7280', border:'none', fontFamily:'sans-serif' }}>
+                    {f.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button onClick={generateReport} disabled={generating}
+              style={{ background:'#111', color:'#fff', border:'none', padding:'7px 16px', borderRadius:6, fontSize:11, fontWeight:700, cursor: generating?'not-allowed':'pointer', opacity: generating?0.7:1, whiteSpace:'nowrap' }}>
+              {generating ? 'Oluşturuluyor...' : '📄 Rapor Oluştur'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rapor Önizleme */}
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'24px', marginBottom:16 }}>
+        {/* Header */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', paddingBottom:16, borderBottom:'2px solid #111', marginBottom:16 }}>
+          <div>
+            <div style={{ fontSize:18, fontWeight:700, color:'#111' }}>VulnBoard</div>
+            <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace' }}>Penetration Test Report</div>
+          </div>
+          <div style={{ textAlign:'right', fontSize:10, color:'#9ca3af', fontFamily:'monospace', lineHeight:1.8 }}>
+            <div>Tarih: {new Date().toLocaleDateString('tr-TR')}</div>
+            <div>Müşteri: {clientName}</div>
+            <div>Gizlilik: Müşteriye Özel</div>
+          </div>
+        </div>
+
+        {/* Executive Summary */}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>Executive Summary</div>
+          <div style={{ fontSize:12, color:'#374151', lineHeight:1.7 }}>
+            {clientName} için gerçekleştirilen penetrasyon testi kapsamında <strong>{stats.total} adet güvenlik açığı</strong> tespit edilmiştir.
+            Bulgular arasında {stats.critical} kritik, {stats.high} yüksek, {stats.medium} orta ve {stats.low} düşük seviyeli zafiyet bulunmaktadır.
+            Toplam bulgular içinde <strong>{stats.closed} adet ({slaScore}%)</strong> kapatılmıştır.
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8, marginBottom:16 }}>
+          {[['Toplam','#111',stats.total],['Kritik','#dc2626',stats.critical],['Yüksek','#ea580c',stats.high],['Orta','#ca8a04',stats.medium],['Kapatıldı','#16a34a',stats.closed]].map(([l,c,v]) => (
+            <div key={l} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'10px', textAlign:'center' }}>
+              <div style={{ fontSize:18, fontWeight:700, fontFamily:'monospace', color:c }}>{v}</div>
+              <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase' }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* SLA */}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>SLA Performansı</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+            {[
+              { label:'Kritik', target:'24 saat', closed: clientFindings.filter(f=>f.level==='kritik'&&f.status==='kapali').length, total: clientFindings.filter(f=>f.level==='kritik').length },
+              { label:'Yüksek', target:'7 gün',   closed: clientFindings.filter(f=>f.level==='yuksek'&&f.status==='kapali').length, total: clientFindings.filter(f=>f.level==='yuksek').length },
+              { label:'Orta',   target:'30 gün',  closed: clientFindings.filter(f=>f.level==='orta'&&f.status==='kapali').length,   total: clientFindings.filter(f=>f.level==='orta').length },
+            ].map(item => {
+              const rate = item.total > 0 ? Math.round((item.closed/item.total)*100) : 0
+              const color = rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626'
+              return (
+                <div key={item.label} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'10px' }}>
+                  <div style={{ fontSize:11, color:'#374151', marginBottom:2 }}>{item.label} — {item.target}</div>
+                  <div style={{ fontSize:18, fontWeight:700, fontFamily:'monospace', color, marginBottom:4 }}>{rate}%</div>
+                  <div style={{ height:5, background:'#e5e7eb', borderRadius:3 }}>
+                    <div style={{ height:'100%', width:`${rate}%`, background:color, borderRadius:3 }} />
+                  </div>
+                  <div style={{ fontSize:10, color:'#9ca3af', marginTop:3, fontFamily:'monospace' }}>{item.closed}/{item.total}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Bulgular */}
+        <div>
+          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>Bulgular</div>
+          {clientFindings.length === 0 ? (
+            <div style={{ fontSize:12, color:'#9ca3af', textAlign:'center', padding:20 }}>Bulgu bulunamadı.</div>
+          ) : clientFindings.map(f => (
+            <div key={f.id} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'12px', marginBottom:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                <span style={{ fontFamily:'monospace', fontSize:10, color:'#9ca3af' }}>{f.finding_id}</span>
+                <span style={{ fontSize:11, fontWeight:500, color:'#111' }}>{f.title}</span>
+                <span style={{ marginLeft:'auto', fontSize:10, fontFamily:'monospace', fontWeight:500, color: levelColor[f.level] }}>CVSS {f.cvss_score || '-'}</span>
+              </div>
+              <div style={{ display:'flex', gap:6, marginBottom: f.recommendation ? 8 : 0 }}>
+                <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#fef2f2', color: levelColor[f.level], border:`0.5px solid ${levelColor[f.level]}33` }}>{levelLabel[f.level]}</span>
+                <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#f3f4f6', color:'#374151' }}>{statusLabel[f.status]}</span>
+                {f.impact_category && <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#eff6ff', color:'#2563eb' }}>{f.impact_category}</span>}
+              </div>
+              {f.recommendation && (
+                <div style={{ marginTop:6, padding:'8px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:4 }}>
+                  <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', marginBottom:3 }}>TAVSİYE</div>
+                  <div style={{ fontSize:11, color:'#374151', lineHeight:1.5 }}>{f.recommendation}</div>
+                </div>
+              )}
+              {f.references_links && (
+                <div style={{ marginTop:6, padding:'8px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4 }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', marginBottom:3 }}>REFERANSLAR</div>
+                  <div style={{ fontSize:11, color:'#2563eb', fontFamily:'monospace', whiteSpace:'pre-wrap' }}>{f.references_links}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop:16, paddingTop:12, borderTop:'0.5px solid #e5e7eb', display:'flex', justifyContent:'space-between', fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>
+          <span>VulnBoard // Gizli</span>
+          <span>{new Date().toLocaleDateString('tr-TR')}</span>
+          <span>vulnboard.com</span>
+        </div>
+      </div>
+
+      {/* Oluşturulan Raporlar */}
+      {generatedReports.length > 0 && (
+        <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+          <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Oluşturulan Raporlar</div>
+          {generatedReports.map(r => (
+            <div key={r.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, marginBottom:8 }}>
+              <div>
+                <div style={{ fontSize:12, fontWeight:500, color:'#111' }}>{r.title}</div>
+                <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>{r.date} · {r.findings} bulgu · {r.format.toUpperCase()}</div>
+              </div>
+              <button style={{ background:'#111', color:'#fff', border:'none', padding:'5px 12px', borderRadius:6, fontSize:11, cursor:'pointer' }}>
+                ⬇ İndir
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -474,9 +672,7 @@ export default function Dashboard({ profile, onLogout }) {
         )}
 
         {activePage === 'reports' && (
-          <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#9ca3af', fontSize:12 }}>
-            Rapor modülü yakında! 🚀
-          </div>
+          <ReportsPage profile={profile} clients={clients} findings={findings} isPentest={isPentest} />
         )}
       </div>
 
