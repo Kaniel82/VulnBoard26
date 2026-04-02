@@ -18,7 +18,8 @@ export default function Login({ onLogin }) {
     console.log('Profile:', profile, 'Error:', profileError)
 if (!profile) { setError('Profil bulunamadı. Yönetici ile iletişime geçin.'); setLoading(false); return }
 
-    if (profile.role !== role) {
+    const allowedRole = profile.role === 'superadmin' ? 'pentest' : profile.role
+if (allowedRole !== role) {
   setError(role === 'pentest' ? 'Bu hesap müşteri hesabıdır.' : 'Bu hesap pentest hesabıdır.')
   await supabase.auth.signOut()
   setLoading(false)
