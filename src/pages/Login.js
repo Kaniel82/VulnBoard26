@@ -23,7 +23,7 @@ const handleLogin = async () => {
     await supabase.auth.signOut()
     setLoading(false)
     return
-  }
+
   if (role === 'client' && (profile.role === 'pentest' || profile.role === 'superadmin')) {
     setError('Bu hesap pentest hesabıdır.')
     await supabase.auth.signOut()
