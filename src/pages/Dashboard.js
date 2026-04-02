@@ -1,4 +1,144 @@
 
+const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => {
+  const [activeTab, setActiveTab] = useState('pentest')
+  const [form, setForm] = useState({ name:'', email:'', password:'', full_name:'' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [pentestUsers, setPentestUsers] = useState([])
+
+  const createUser = async (role) => {
+    if (!form.email || !form.password || !form.full_name) {
+      setError('Tüm alanları doldurun.')
+      return
+    }
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      if (role === 'client') {
+        // Client için önce clients tablosuna ekle
+        const res1 = await fetch(`${supabaseUrl}/rest/v1/clients`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify({ name: form.name || form.full_name, email: form.email })
+        })
+        const clientData = await res1.json()
+        const clientId = clientData[0]?.id
+
+        const res2 = await fetch(`${supabaseUrl}/functions/v1/bright-responder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: clientId })
+        })
+        const result = await res2.json()
+        if (result.error) throw new Error(result.error)
+      } else {
+        // Pentest için direkt edge function
+        const res = await fetch(`${supabaseUrl}/functions/v1/bright-responder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: null, role: role })
+        })
+        const result = await res.json()
+        if (result.error) throw new Error(result.error)
+      }
+
+      setSuccess(`${role === 'pentest' ? 'Pentest firması' : 'Müşteri'} başarıyla oluşturuldu!`)
+      setForm({ name:'', email:'', password:'', full_name:'' })
+      if (fetchClients) fetchClients()
+    } catch(e) {
+      setError(e.message)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
+      <div style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:8, padding:'12px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
+        <span style={{ fontSize:16 }}>⚠️</span>
+        <span style={{ fontSize:12, color:'#dc2626', fontWeight:500 }}>Super Admin Paneli — Sadece geliştirici erişimi</span>
+      </div>
+
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, overflow:'hidden' }}>
+        <div style={{ display:'flex', borderBottom:'0.5px solid #e5e7eb' }}>
+          {[['pentest','🔐 Pentest Firması Ekle'],['client','👤 Müşteri Ekle']].map(([key, label]) => (
+            <button key={key} onClick={() => { setActiveTab(key); setError(''); setSuccess('') }}
+              style={{ flex:1, padding:'12px', fontSize:12, cursor:'pointer', background: activeTab===key?'#f3f4f6':'#fff', color: activeTab===key?'#111':'#6b7280', border:'none', fontWeight: activeTab===key?500:400, fontFamily:'sans-serif', borderBottom: activeTab===key?'2px solid #111':'2px solid transparent' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ padding:'20px' }}>
+          {error && <div style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:6, padding:'8px 12px', fontSize:12, color:'#dc2626', marginBottom:12 }}>{error}</div>}
+          {success && <div style={{ background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:6, padding:'8px 12px', fontSize:12, color:'#16a34a', marginBottom:12 }}>{success}</div>}
+
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {activeTab === 'client' && (
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Şirket Adı</label>
+                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Şirket adı..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+              </div>
+            )}
+            {[
+              ['Yetkili / Tam Ad', 'full_name', 'text', 'Ad Soyad...'],
+              ['E-posta', 'email', 'email', 'ornek@firma.com'],
+              ['Şifre', 'password', 'password', '••••••••']
+            ].map(([label, key, type, placeholder]) => (
+              <div key={key}>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>{label}</label>
+                <input type={type} value={form[key]} onChange={e => setForm({...form, [key]: e.target.value})} placeholder={placeholder}
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box' }} />
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => createUser(activeTab)} disabled={saving}
+            style={{ marginTop:16, background:'#111', color:'#fff', border:'none', padding:'9px 20px', borderRadius:6, fontSize:12, fontWeight:700, cursor: saving?'not-allowed':'pointer', opacity: saving?0.7:1, width:'100%', fontFamily:'sans-serif' }}>
+            {saving ? 'Oluşturuluyor...' : `${activeTab === 'pentest' ? 'Pentest Firması' : 'Müşteri'} Oluştur`}
+          </button>
+        </div>
+      </div>
+
+      {/* Mevcut Müşteriler */}
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginTop:16 }}>
+        <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Mevcut Müşteriler ({clients.length})</div>
+        {clients.length === 0 ? (
+          <div style={{ fontSize:12, color:'#9ca3af', textAlign:'center', padding:12 }}>Henüz müşteri yok.</div>
+        ) : (
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+            <thead>
+              <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
+                {['Şirket', 'Email', 'Kayıt'].map(h => (
+                  <th key={h} style={{ padding:'6px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', fontWeight:400 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map(c => (
+                <tr key={c.id} style={{ borderBottom:'0.5px solid #f3f4f6' }}>
+                  <td style={{ padding:'8px 10px', fontWeight:500, color:'#111' }}>{c.name}</td>
+                  <td style={{ padding:'8px 10px', color:'#6b7280', fontSize:11 }}>{c.email}</td>
+                  <td style={{ padding:'8px 10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{c.created_at?.slice(0,10)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
+
 const ReportsPage = ({ profile, clients, findings, isPentest }) => {
   const [selectedClient, setSelectedClient] = useState('')
   const [generating, setGenerating] = useState(false)
@@ -272,7 +412,8 @@ export default function Dashboard({ profile, onLogout }) {
   const [newClient, setNewClient] = useState({ name:'', email:'', password:'', full_name:'' })
   const [cvssParams, setCvssParams] = useState({ av:'0.85', ac:'0.77', pr:'0.85', ui:'0.85', c:'0.56', i:'0.56' })
 
-  const isPentest = profile?.role === 'pentest'
+  const isPentest = profile?.role === 'pentest' || profile?.role === 'superadmin'
+  const isSuperAdmin = profile?.role === 'superadmin'
   const levelLabel = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
   const statusLabel = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
   const cvssScore = calcCVSSScore(cvssParams)
@@ -408,6 +549,7 @@ export default function Dashboard({ profile, onLogout }) {
     { key: 'findings', label: isPentest ? 'Tüm Bulgular' : 'Bulgularım' },
     { key: 'clients', label: 'Müşteriler' },
     { key: 'reports', label: 'Raporlar' },
+    { key: 'superadmin', label: '⚙️ Super Admin' },
   ]
 
   return (
@@ -421,6 +563,7 @@ export default function Dashboard({ profile, onLogout }) {
         </div>
         {navItems.map(item => {
           if (item.key === 'clients' && !isPentest) return null
+          if (item.key === 'superadmin' && !isSuperAdmin) return null
           return (
             <div key={item.key} onClick={() => setActivePage(item.key)}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 18px', fontSize:12, color: activePage===item.key ? '#111' : '#6b7280', background: activePage===item.key ? '#f3f4f6' : 'transparent', borderLeft: activePage===item.key ? '2px solid #111' : '2px solid transparent', cursor:'pointer' }}>
@@ -491,6 +634,32 @@ export default function Dashboard({ profile, onLogout }) {
                     </div>
                   </div>
                 ))}
+                <div style={{ marginTop:14, display:'flex', justifyContent:'center' }}>
+                  <div style={{ position:'relative', width:80, height:80 }}>
+                    <svg viewBox="0 0 36 36" style={{ width:80, height:80, transform:'rotate(-90deg)' }}>
+                      {(() => {
+                        const total = findings.length || 1
+                        const segs = [
+                          { count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626' },
+                          { count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c' },
+                          { count: findings.filter(f=>f.level==='orta').length,   color:'#ca8a04' },
+                          { count: findings.filter(f=>f.level==='dusuk').length,  color:'#16a34a' },
+                        ]
+                        const r = 15.9155
+                        const circ = 2 * Math.PI * r
+                        let offset = 0
+                        return segs.map((seg, i) => {
+                          const pct = seg.count / total
+                          const dash = pct * circ
+                          const gap = circ - dash
+                          const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="3.5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset * circ} />
+                          offset += pct
+                          return el
+                        })
+                      })()}
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Durum Dağılımı */}
@@ -669,6 +838,10 @@ export default function Dashboard({ profile, onLogout }) {
               </table>
             )}
           </div>
+        )}
+
+        {activePage === 'superadmin' && isSuperAdmin && (
+          <SuperAdminPage clients={clients} fetchClients={fetchClients} supabaseUrl={process.env.REACT_APP_SUPABASE_URL} supabaseKey={process.env.REACT_APP_SUPABASE_ANON_KEY} />
         )}
 
         {activePage === 'reports' && (
