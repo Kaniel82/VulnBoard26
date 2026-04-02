@@ -18,8 +18,23 @@ export default function Login({ onLogin }) {
     console.log('Profile:', profile, 'Error:', profileError)
 if (!profile) { setError('Profil bulunamadı. Yönetici ile iletişime geçin.'); setLoading(false); return }
 
-    const allowedRole = profile.role === 'superadmin' ? 'pentest' : profile.role
-if (allowedRole !== role) {
+    if (profile.role !== 'superadmin' && profile.role !== role) {
+  setError(role === 'pentest' ? 'Bu hesap müşteri hesabıdır.' : 'Bu hesap pentest hesabıdır.')
+  await supabase.auth.signOut()
+  setLoading(false)
+  return
+}
+
+onLogin(profile)
+
+  setError(role === 'pentest' ? 'Bu hesap müşteri hesabıdır.' : 'Bu hesap pentest hesabıdır.')
+  await supabase.auth.signOut()
+  setLoading(false)
+  return
+}
+
+onLogin(profile)
+
   setError(role === 'pentest' ? 'Bu hesap müşteri hesabıdır.' : 'Bu hesap pentest hesabıdır.')
   await supabase.auth.signOut()
   setLoading(false)
