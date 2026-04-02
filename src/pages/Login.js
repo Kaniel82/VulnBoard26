@@ -29,7 +29,6 @@ const handleLogin = async () => {
     await supabase.auth.signOut()
     setLoading(false)
     return
-  }
 
   onLogin(profile)
   setLoading(false)
