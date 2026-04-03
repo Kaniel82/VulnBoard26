@@ -6,6 +6,48 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [pentestUsers, setPentestUsers] = useState([])
+  const [editingClient, setEditingClient] = useState(null)
+  const [editForm, setEditForm] = useState({ name:'', email:'' })
+
+
+  const deleteClient = async (clientId, clientName) => {
+    if (!window.confirm(`"${clientName}" müşterisini silmek istediğinize emin misiniz?`)) return
+    const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${clientId}`, {
+      method: 'DELETE',
+      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+    })
+    if (res.ok) {
+      setSuccess('Müşteri silindi!')
+      if (fetchClients) fetchClients()
+    } else {
+      setError('Silme işlemi başarısız.')
+    }
+  }
+
+  const startEditClient = (client) => {
+    setEditingClient(client.id)
+    setEditForm({ name: client.name, email: client.email || '' })
+  }
+
+  const saveEditClient = async (clientId) => {
+    const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${clientId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ name: editForm.name, email: editForm.email })
+    })
+    if (res.ok) {
+      setSuccess('Müşteri güncellendi!')
+      setEditingClient(null)
+      if (fetchClients) fetchClients()
+    } else {
+      setError('Güncelleme başarısız.')
+    }
+  }
 
   const createUser = async (role) => {
     if (!form.email || !form.password || !form.full_name) {
@@ -117,7 +159,7 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
             <thead>
               <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
-                {['Şirket', 'Email', 'Kayıt'].map(h => (
+                {['Şirket', 'Email', 'Kayıt', 'İşlem'].map(h => (
                   <th key={h} style={{ padding:'6px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', fontWeight:400 }}>{h}</th>
                 ))}
               </tr>
@@ -125,9 +167,32 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
             <tbody>
               {clients.map(c => (
                 <tr key={c.id} style={{ borderBottom:'0.5px solid #f3f4f6' }}>
-                  <td style={{ padding:'8px 10px', fontWeight:500, color:'#111' }}>{c.name}</td>
-                  <td style={{ padding:'8px 10px', color:'#6b7280', fontSize:11 }}>{c.email}</td>
+                  <td style={{ padding:'8px 10px', fontWeight:500, color:'#111' }}>
+                    {editingClient === c.id ? (
+                      <input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})}
+                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'100%' }} />
+                    ) : c.name}
+                  </td>
+                  <td style={{ padding:'8px 10px', color:'#6b7280', fontSize:11 }}>
+                    {editingClient === c.id ? (
+                      <input value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})}
+                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'100%' }} />
+                    ) : c.email}
+                  </td>
                   <td style={{ padding:'8px 10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{c.created_at?.slice(0,10)}</td>
+                  <td style={{ padding:'8px 10px' }}>
+                    {editingClient === c.id ? (
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button onClick={() => saveEditClient(c.id)} style={{ background:'#111', color:'#fff', border:'none', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer' }}>✓ Kaydet</button>
+                        <button onClick={() => setEditingClient(null)} style={{ background:'#f3f4f6', color:'#374151', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer' }}>İptal</button>
+                      </div>
+                    ) : (
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button onClick={() => startEditClient(c)} style={{ background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#374151' }}>✏️</button>
+                        <button onClick={() => deleteClient(c.id, c.name)} style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#dc2626' }}>🗑️</button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
