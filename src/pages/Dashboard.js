@@ -1,4 +1,5 @@
-
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => {
   const [activeTab, setActiveTab] = useState('pentest')
   const [form, setForm] = useState({ name:'', email:'', password:'', full_name:'' })
