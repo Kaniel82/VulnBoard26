@@ -728,6 +728,44 @@ export default function Dashboard({ profile, onLogout }) {
                     </div>
                   </div>
                 ))}
+                <div style={{ marginTop:14, display:'flex', justifyContent:'center', alignItems:'center', gap:16 }}>
+                  <svg viewBox="0 0 36 36" style={{ width:90, height:90, transform:'rotate(-90deg)', flexShrink:0 }}>
+                    {(() => {
+                      const total = findings.length || 1
+                      const segs = [
+                        { count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626' },
+                        { count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c' },
+                        { count: findings.filter(f=>f.level==='orta').length,   color:'#ca8a04' },
+                        { count: findings.filter(f=>f.level==='dusuk').length,  color:'#16a34a' },
+                      ]
+                      const r = 15.9155
+                      const circ = 2 * Math.PI * r
+                      let offset = 0
+                      return segs.map((seg, i) => {
+                        const pct = seg.count / total
+                        const dash = pct * circ
+                        const gap = circ - dash
+                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="4" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset * circ} />
+                        offset += pct
+                        return el
+                      })
+                    })()}
+                  </svg>
+                  <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                    {[
+                      { label:'Kritik', color:'#dc2626', count: findings.filter(f=>f.level==='kritik').length },
+                      { label:'Yüksek', color:'#ea580c', count: findings.filter(f=>f.level==='yuksek').length },
+                      { label:'Orta',   color:'#ca8a04', count: findings.filter(f=>f.level==='orta').length },
+                      { label:'Düşük',  color:'#16a34a', count: findings.filter(f=>f.level==='dusuk').length },
+                    ].map(s => (
+                      <div key={s.label} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <div style={{ width:8, height:8, borderRadius:'50%', background:s.color, flexShrink:0 }} />
+                        <span style={{ fontSize:11, color:'#6b7280' }}>{s.label}</span>
+                        <span style={{ fontSize:11, fontFamily:'monospace', fontWeight:500, color:s.color, marginLeft:'auto' }}>{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Durum Dağılımı */}
