@@ -9,44 +9,11 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
   const [editingClient, setEditingClient] = useState(null)
   const [editForm, setEditForm] = useState({ name:'', email:'' })
 
+  useEffect(() => { fetchPentestUsers() }, [])
 
-  const deleteClient = async (clientId, clientName) => {
-    if (!window.confirm(`"${clientName}" müşterisini silmek istediğinize emin misiniz?`)) return
-    const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${clientId}`, {
-      method: 'DELETE',
-      headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-    })
-    if (res.ok) {
-      setSuccess('Müşteri silindi!')
-      if (fetchClients) fetchClients()
-    } else {
-      setError('Silme işlemi başarısız.')
-    }
-  }
-
-  const startEditClient = (client) => {
-    setEditingClient(client.id)
-    setEditForm({ name: client.name, email: client.email || '' })
-  }
-
-  const saveEditClient = async (clientId) => {
-    const res = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${clientId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
-      },
-      body: JSON.stringify({ name: editForm.name, email: editForm.email })
-    })
-    if (res.ok) {
-      setSuccess('Müşteri güncellendi!')
-      setEditingClient(null)
-      if (fetchClients) fetchClients()
-    } else {
-      setError('Güncelleme başarısız.')
-    }
+  const fetchPentestUsers = async () => {
+    const { data } = await supabase.from('profiles').select('*').eq('role', 'pentest').order('created_at', { ascending: false })
+    setPentestUsers(data || [])
   }
 
   const createUser = async (role) => {
@@ -60,46 +27,79 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
 
     try {
       if (role === 'client') {
-        // Client için önce clients tablosuna ekle
-        const res1 = await fetch(`${supabaseUrl}/rest/v1/clients`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify({ name: form.name || form.full_name, email: form.email })
-        })
-        const clientData = await res1.json()
-        const clientId = clientData[0]?.id
+        const { data: clientData, error: cErr } = await supabase
+          .from('clients')
+          .insert({ name: form.name || form.full_name, email: form.email })
+          .select()
+          .single()
+        if (cErr) throw new Error(cErr.message)
 
-        const res2 = await fetch(`${supabaseUrl}/functions/v1/bright-responder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: clientId })
-        })
-        const result = await res2.json()
-        if (result.error) throw new Error(result.error)
-      } else {
-        // Pentest için direkt edge function
         const res = await fetch(`${supabaseUrl}/functions/v1/bright-responder`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: null, role: role })
+          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: clientData.id, role: 'client' })
         })
         const result = await res.json()
         if (result.error) throw new Error(result.error)
+        if (fetchClients) fetchClients()
+      } else {
+        const res = await fetch(`${supabaseUrl}/functions/v1/bright-responder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, company_id: null, role: 'pentest' })
+        })
+        const result = await res.json()
+        if (result.error) throw new Error(result.error)
+        fetchPentestUsers()
       }
 
       setSuccess(`${role === 'pentest' ? 'Pentest firması' : 'Müşteri'} başarıyla oluşturuldu!`)
       setForm({ name:'', email:'', password:'', full_name:'' })
-      if (fetchClients) fetchClients()
     } catch(e) {
       setError(e.message)
     }
     setSaving(false)
   }
+
+  const deleteClient = async (clientId, clientName) => {
+    if (!window.confirm(`"${clientName}" silinsin mi?`)) return
+    const { error } = await supabase.from('clients').delete().eq('id', clientId)
+    if (!error) {
+      setSuccess('Müşteri silindi!')
+      if (fetchClients) fetchClients()
+    } else {
+      setError('Silme başarısız: ' + error.message)
+    }
+  }
+
+  const deletePentest = async (profileId, name) => {
+    if (!window.confirm(`"${name}" silinsin mi?`)) return
+    const { error } = await supabase.from('profiles').delete().eq('id', profileId)
+    if (!error) {
+      setSuccess('Pentest firması silindi!')
+      fetchPentestUsers()
+    } else {
+      setError('Silme başarısız: ' + error.message)
+    }
+  }
+
+  const startEditClient = (client) => {
+    setEditingClient(client.id)
+    setEditForm({ name: client.name, email: client.email || '' })
+  }
+
+  const saveEditClient = async (clientId) => {
+    const { error } = await supabase.from('clients').update({ name: editForm.name, email: editForm.email }).eq('id', clientId)
+    if (!error) {
+      setSuccess('Müşteri güncellendi!')
+      setEditingClient(null)
+      if (fetchClients) fetchClients()
+    } else {
+      setError('Güncelleme başarısız: ' + error.message)
+    }
+  }
+
+  const btnStyle = (color) => ({ border:`0.5px solid ${color}33`, borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', background:`${color}11`, color })
 
   return (
     <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
@@ -108,7 +108,7 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
         <span style={{ fontSize:12, color:'#dc2626', fontWeight:500 }}>Super Admin Paneli — Sadece geliştirici erişimi</span>
       </div>
 
-      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, overflow:'hidden' }}>
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, overflow:'hidden', marginBottom:16 }}>
         <div style={{ display:'flex', borderBottom:'0.5px solid #e5e7eb' }}>
           {[['pentest','🔐 Pentest Firması Ekle'],['client','👤 Müşteri Ekle']].map(([key, label]) => (
             <button key={key} onClick={() => { setActiveTab(key); setError(''); setSuccess('') }}
@@ -150,9 +150,39 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
         </div>
       </div>
 
-      {/* Mevcut Müşteriler */}
-      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginTop:16 }}>
-        <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Mevcut Müşteriler ({clients.length})</div>
+      {/* Pentest Firmaları */}
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
+        <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Pentest Firmaları ({pentestUsers.length})</div>
+        {pentestUsers.length === 0 ? (
+          <div style={{ fontSize:12, color:'#9ca3af', textAlign:'center', padding:12 }}>Henüz pentest firması yok.</div>
+        ) : (
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+            <thead>
+              <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
+                {['Ad', 'Email', 'Kayıt', 'İşlem'].map(h => (
+                  <th key={h} style={{ padding:'6px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', fontWeight:400 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pentestUsers.map(u => (
+                <tr key={u.id} style={{ borderBottom:'0.5px solid #f3f4f6' }}>
+                  <td style={{ padding:'8px 10px', fontWeight:500, color:'#111' }}>{u.full_name}</td>
+                  <td style={{ padding:'8px 10px', color:'#6b7280', fontSize:11 }}>{u.email}</td>
+                  <td style={{ padding:'8px 10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{u.created_at?.slice(0,10)}</td>
+                  <td style={{ padding:'8px 10px' }}>
+                    <button onClick={() => deletePentest(u.id, u.full_name)} style={btnStyle('#dc2626')}>🗑️</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Müşteriler */}
+      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+        <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Müşteriler ({clients.length})</div>
         {clients.length === 0 ? (
           <div style={{ fontSize:12, color:'#9ca3af', textAlign:'center', padding:12 }}>Henüz müşteri yok.</div>
         ) : (
@@ -170,13 +200,13 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
                   <td style={{ padding:'8px 10px', fontWeight:500, color:'#111' }}>
                     {editingClient === c.id ? (
                       <input value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})}
-                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'100%' }} />
+                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'120px' }} />
                     ) : c.name}
                   </td>
                   <td style={{ padding:'8px 10px', color:'#6b7280', fontSize:11 }}>
                     {editingClient === c.id ? (
                       <input value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})}
-                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'100%' }} />
+                        style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'4px 8px', fontSize:12, outline:'none', width:'160px' }} />
                     ) : c.email}
                   </td>
                   <td style={{ padding:'8px 10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{c.created_at?.slice(0,10)}</td>
@@ -188,8 +218,8 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
                       </div>
                     ) : (
                       <div style={{ display:'flex', gap:6 }}>
-                        <button onClick={() => startEditClient(c)} style={{ background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#374151' }}>✏️</button>
-                        <button onClick={() => deleteClient(c.id, c.name)} style={{ background:'#fef2f2', border:'0.5px solid #fecaca', borderRadius:4, padding:'3px 8px', fontSize:10, cursor:'pointer', color:'#dc2626' }}>🗑️</button>
+                        <button onClick={() => startEditClient(c)} style={btnStyle('#374151')}>✏️</button>
+                        <button onClick={() => deleteClient(c.id, c.name)} style={btnStyle('#dc2626')}>🗑️</button>
                       </div>
                     )}
                   </td>
@@ -203,259 +233,6 @@ const SuperAdminPage = ({ clients, fetchClients, supabaseUrl, supabaseKey }) => 
   )
 }
 
-
-const ReportsPage = ({ profile, clients, findings, isPentest }) => {
-  const [selectedClient, setSelectedClient] = useState('')
-  const [generating, setGenerating] = useState(false)
-  const [reportType, setReportType] = useState('pdf')
-  const [generatedReports, setGeneratedReports] = useState([])
-
-  const clientFindings = selectedClient
-    ? findings.filter(f => f.client_id === selectedClient)
-    : isPentest ? findings : findings
-
-  const clientName = clients.find(c => c.id === selectedClient)?.name || 'Tüm Müşteriler'
-
-  const stats = {
-    total: clientFindings.length,
-    critical: clientFindings.filter(f => f.level === 'kritik').length,
-    high: clientFindings.filter(f => f.level === 'yuksek').length,
-    medium: clientFindings.filter(f => f.level === 'orta').length,
-    low: clientFindings.filter(f => f.level === 'dusuk').length,
-    closed: clientFindings.filter(f => f.status === 'kapali').length,
-  }
-
-  const slaScore = stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 0
-
-  const generateReport = () => {
-    setGenerating(true)
-    setTimeout(() => {
-      setGenerating(false)
-      const report = {
-        id: Date.now(),
-        title: `${clientName} - Pentest Raporu`,
-        date: new Date().toISOString().slice(0,10),
-        format: reportType,
-        findings: clientFindings.length
-      }
-      setGeneratedReports(prev => [report, ...prev])
-      alert(`${reportType.toUpperCase()} raporu oluşturuldu! Gerçek uygulamada indirilecek.`)
-    }, 2000)
-  }
-
-  const levelLabel = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
-  const statusLabel = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
-  const levelColor = { kritik:'#dc2626', yuksek:'#ea580c', orta:'#ca8a04', dusuk:'#16a34a' }
-
-  return (
-    <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
-      {isPentest && (
-        <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
-          <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Rapor Oluştur</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr auto', gap:10, alignItems:'end' }}>
-            <div>
-              <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Müşteri</label>
-              <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)}
-                style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none' }}>
-                <option value="">Tüm Müşteriler</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Format</label>
-              <div style={{ display:'flex', border:'0.5px solid #e5e7eb', borderRadius:6, overflow:'hidden' }}>
-                {['pdf','excel'].map(f => (
-                  <button key={f} onClick={() => setReportType(f)}
-                    style={{ flex:1, padding:'7px', fontSize:11, cursor:'pointer', background: reportType===f?'#111':'#fff', color: reportType===f?'#fff':'#6b7280', border:'none', fontFamily:'sans-serif' }}>
-                    {f.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button onClick={generateReport} disabled={generating}
-              style={{ background:'#111', color:'#fff', border:'none', padding:'7px 16px', borderRadius:6, fontSize:11, fontWeight:700, cursor: generating?'not-allowed':'pointer', opacity: generating?0.7:1, whiteSpace:'nowrap' }}>
-              {generating ? 'Oluşturuluyor...' : '📄 Rapor Oluştur'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Rapor Önizleme */}
-      <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'24px', marginBottom:16 }}>
-        {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', paddingBottom:16, borderBottom:'2px solid #111', marginBottom:16 }}>
-          <div>
-            <div style={{ fontSize:18, fontWeight:700, color:'#111' }}>VulnBoard</div>
-            <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace' }}>Penetration Test Report</div>
-          </div>
-          <div style={{ textAlign:'right', fontSize:10, color:'#9ca3af', fontFamily:'monospace', lineHeight:1.8 }}>
-            <div>Tarih: {new Date().toLocaleDateString('tr-TR')}</div>
-            <div>Müşteri: {clientName}</div>
-            <div>Gizlilik: Müşteriye Özel</div>
-          </div>
-        </div>
-
-        {/* Executive Summary */}
-        <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>Executive Summary</div>
-          <div style={{ fontSize:12, color:'#374151', lineHeight:1.7 }}>
-            {clientName} için gerçekleştirilen penetrasyon testi kapsamında <strong>{stats.total} adet güvenlik açığı</strong> tespit edilmiştir.
-            Bulgular arasında {stats.critical} kritik, {stats.high} yüksek, {stats.medium} orta ve {stats.low} düşük seviyeli zafiyet bulunmaktadır.
-            Toplam bulgular içinde <strong>{stats.closed} adet ({slaScore}%)</strong> kapatılmıştır.
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8, marginBottom:16 }}>
-          {[['Toplam','#111',stats.total],['Kritik','#dc2626',stats.critical],['Yüksek','#ea580c',stats.high],['Orta','#ca8a04',stats.medium],['Kapatıldı','#16a34a',stats.closed]].map(([l,c,v]) => (
-            <div key={l} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'10px', textAlign:'center' }}>
-              <div style={{ fontSize:18, fontWeight:700, fontFamily:'monospace', color:c }}>{v}</div>
-              <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase' }}>{l}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* SLA */}
-        <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>SLA Performansı</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-            {[
-              { label:'Kritik', target:'24 saat', closed: clientFindings.filter(f=>f.level==='kritik'&&f.status==='kapali').length, total: clientFindings.filter(f=>f.level==='kritik').length },
-              { label:'Yüksek', target:'7 gün',   closed: clientFindings.filter(f=>f.level==='yuksek'&&f.status==='kapali').length, total: clientFindings.filter(f=>f.level==='yuksek').length },
-              { label:'Orta',   target:'30 gün',  closed: clientFindings.filter(f=>f.level==='orta'&&f.status==='kapali').length,   total: clientFindings.filter(f=>f.level==='orta').length },
-            ].map(item => {
-              const rate = item.total > 0 ? Math.round((item.closed/item.total)*100) : 0
-              const color = rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626'
-              return (
-                <div key={item.label} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'10px' }}>
-                  <div style={{ fontSize:11, color:'#374151', marginBottom:2 }}>{item.label} — {item.target}</div>
-                  <div style={{ fontSize:18, fontWeight:700, fontFamily:'monospace', color, marginBottom:4 }}>{rate}%</div>
-                  <div style={{ height:5, background:'#e5e7eb', borderRadius:3 }}>
-                    <div style={{ height:'100%', width:`${rate}%`, background:color, borderRadius:3 }} />
-                  </div>
-                  <div style={{ fontSize:10, color:'#9ca3af', marginTop:3, fontFamily:'monospace' }}>{item.closed}/{item.total}</div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Bulgular */}
-        <div>
-          <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>Bulgular</div>
-          {clientFindings.length === 0 ? (
-            <div style={{ fontSize:12, color:'#9ca3af', textAlign:'center', padding:20 }}>Bulgu bulunamadı.</div>
-          ) : clientFindings.map(f => (
-            <div key={f.id} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'12px', marginBottom:8 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                <span style={{ fontFamily:'monospace', fontSize:10, color:'#9ca3af' }}>{f.finding_id}</span>
-                <span style={{ fontSize:11, fontWeight:500, color:'#111' }}>{f.title}</span>
-                <span style={{ marginLeft:'auto', fontSize:10, fontFamily:'monospace', fontWeight:500, color: levelColor[f.level] }}>CVSS {f.cvss_score || '-'}</span>
-              </div>
-              <div style={{ display:'flex', gap:6, marginBottom: f.recommendation ? 8 : 0 }}>
-                <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#fef2f2', color: levelColor[f.level], border:`0.5px solid ${levelColor[f.level]}33` }}>{levelLabel[f.level]}</span>
-                <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#f3f4f6', color:'#374151' }}>{statusLabel[f.status]}</span>
-                {f.impact_category && <span style={{ fontSize:10, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, background:'#eff6ff', color:'#2563eb' }}>{f.impact_category}</span>}
-              </div>
-              {f.recommendation && (
-                <div style={{ marginTop:6, padding:'8px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:4 }}>
-                  <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', marginBottom:3 }}>TAVSİYE</div>
-                  <div style={{ fontSize:11, color:'#374151', lineHeight:1.5 }}>{f.recommendation}</div>
-                </div>
-              )}
-              {f.references_links && (
-                <div style={{ marginTop:6, padding:'8px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:4 }}>
-                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', marginBottom:3 }}>REFERANSLAR</div>
-                  <div style={{ fontSize:11, color:'#2563eb', fontFamily:'monospace', whiteSpace:'pre-wrap' }}>{f.references_links}</div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop:16, paddingTop:12, borderTop:'0.5px solid #e5e7eb', display:'flex', justifyContent:'space-between', fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>
-          <span>VulnBoard // Gizli</span>
-          <span>{new Date().toLocaleDateString('tr-TR')}</span>
-          <span>vulnboard.com</span>
-        </div>
-      </div>
-
-      {/* Oluşturulan Raporlar */}
-      {generatedReports.length > 0 && (
-        <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
-          <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:12 }}>Oluşturulan Raporlar</div>
-          {generatedReports.map(r => (
-            <div key={r.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, marginBottom:8 }}>
-              <div>
-                <div style={{ fontSize:12, fontWeight:500, color:'#111' }}>{r.title}</div>
-                <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>{r.date} · {r.findings} bulgu · {r.format.toUpperCase()}</div>
-              </div>
-              <button style={{ background:'#111', color:'#fff', border:'none', padding:'5px 12px', borderRadius:6, fontSize:11, cursor:'pointer' }}>
-                ⬇ İndir
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
-
-const Badge = ({ type, label }) => {
-  const styles = {
-    kritik: { background:'#fef2f2', color:'#dc2626', border:'0.5px solid #fecaca' },
-    yuksek: { background:'#fff7ed', color:'#ea580c', border:'0.5px solid #fed7aa' },
-    orta:   { background:'#fefce8', color:'#ca8a04', border:'0.5px solid #fde68a' },
-    dusuk:  { background:'#f0fdf4', color:'#16a34a', border:'0.5px solid #bbf7d0' },
-    acik:   { background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe' },
-    devam:  { background:'#faf5ff', color:'#7c3aed', border:'0.5px solid #ddd6fe' },
-    kapali: { background:'#f0fdf4', color:'#16a34a', border:'0.5px solid #bbf7d0' },
-  }
-  return <span style={{ ...styles[type], display:'inline-block', padding:'2px 7px', borderRadius:4, fontSize:10, fontWeight:500, fontFamily:'monospace' }}>{label}</span>
-}
-
-const calcCVSSScore = (params) => {
-  const av = parseFloat(params.av)
-  const ac = parseFloat(params.ac)
-  const pr = parseFloat(params.pr)
-  const ui = parseFloat(params.ui)
-  const c = parseFloat(params.c)
-  const i = parseFloat(params.i)
-  const a = 0.56
-  const iss = 1 - (1 - c) * (1 - i) * (1 - a)
-  const impact = iss <= 0 ? 0 : 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15)
-  const exploit = 8.22 * av * ac * pr * ui
-  const score = impact <= 0 ? 0 : Math.min(10, impact + exploit)
-  return Math.round(score * 10) / 10
-}
-
-const getCvssColor = (score) => {
-  if (score >= 9) return '#dc2626'
-  if (score >= 7) return '#ea580c'
-  if (score >= 4) return '#ca8a04'
-  if (score > 0) return '#16a34a'
-  return '#9ca3af'
-}
-
-const getCvssLabel = (score) => {
-  if (score >= 9) return 'Kritik'
-  if (score >= 7) return 'Yüksek'
-  if (score >= 4) return 'Orta'
-  if (score > 0) return 'Düşük'
-  return 'Yok'
-}
-
-const CVSS_PARAMS = [
-  { key:'av', label:'Attack Vector', options:[{v:'0.85',l:'Network'},{v:'0.62',l:'Adjacent'},{v:'0.55',l:'Local'},{v:'0.2',l:'Physical'}] },
-  { key:'ac', label:'Attack Complexity', options:[{v:'0.77',l:'Low'},{v:'0.44',l:'High'}] },
-  { key:'pr', label:'Privileges Required', options:[{v:'0.85',l:'None'},{v:'0.62',l:'Low'},{v:'0.27',l:'High'}] },
-  { key:'ui', label:'User Interaction', options:[{v:'0.85',l:'None'},{v:'0.62',l:'Required'}] },
-  { key:'c',  label:'Confidentiality', options:[{v:'0.56',l:'High'},{v:'0.22',l:'Low'},{v:'0',l:'None'}] },
-  { key:'i',  label:'Integrity', options:[{v:'0.56',l:'High'},{v:'0.22',l:'Low'},{v:'0',l:'None'}] },
-]
 
 export default function Dashboard({ profile, onLogout }) {
   const [findings, setFindings] = useState([])
