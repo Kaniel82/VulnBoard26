@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 
 const Badge = ({ type, label }) => {
   const styles = {
@@ -313,10 +316,179 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
 
   const slaScore = stats.total > 0 ? Math.round((stats.closed / stats.total) * 100) : 0
 
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    const date = new Date().toLocaleDateString('tr-TR')
+
+    // Header
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('VulnBoard', 14, 20)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(128, 128, 128)
+    doc.text('Penetration Test Report', 14, 27)
+    doc.text(`Tarih: ${date}`, 140, 20)
+    doc.text(`Müşteri: ${clientName}`, 140, 27)
+    doc.setTextColor(0, 0, 0)
+
+    // Line
+    doc.setDrawColor(0, 0, 0)
+    doc.setLineWidth(0.5)
+    doc.line(14, 32, 196, 32)
+
+    // Executive Summary
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Executive Summary', 14, 42)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    const summary = `${clientName} için gerçekleştirilen penetrasyon testi kapsamında ${stats.total} adet güvenlik açığı tespit edilmiştir. Bulgular arasında ${stats.critical} kritik, ${stats.high} yüksek, ${stats.medium} orta ve ${stats.low} düşük seviyeli zafiyet bulunmaktadır. Toplam bulgular içinde ${stats.closed} adet (${slaScore}%) kapatılmıştır.`
+    const lines = doc.splitTextToSize(summary, 180)
+    doc.text(lines, 14, 50)
+
+    // Stats table
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Özet İstatistikler', 14, 72)
+    autoTable(doc, {
+      startY: 76,
+      head: [['Toplam', 'Kritik', 'Yüksek', 'Orta', 'Düşük', 'Kapatıldı']],
+      body: [[stats.total, stats.critical, stats.high, stats.medium, stats.low, stats.closed]],
+      styles: { fontSize: 10, halign: 'center' },
+      headStyles: { fillColor: [17, 17, 17] },
+      margin: { left: 14 }
+    })
+
+    // Findings table
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    const y1 = doc.lastAutoTable.finalY + 10
+    doc.text('Bulgular', 14, y1)
+    
+    const levelMap = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
+    const statusMap = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
+
+    autoTable(doc, {
+      startY: y1 + 4,
+      head: [['ID', 'Başlık', 'Seviye', 'CVSS', 'Durum', 'Etki Alanı']],
+      body: clientFindings.map(f => [
+        f.finding_id || '-',
+        f.title,
+        levelMap[f.level] || f.level,
+        f.cvss_score || '-',
+        statusMap[f.status] || f.status,
+        f.impact_category || '-'
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [17, 17, 17] },
+      columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 60 }, 2: { cellWidth: 20 }, 3: { cellWidth: 15 }, 4: { cellWidth: 20 } },
+      margin: { left: 14 },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 2) {
+          const level = clientFindings[data.row.index]?.level
+          if (level === 'kritik') data.cell.styles.textColor = [220, 38, 38]
+          else if (level === 'yuksek') data.cell.styles.textColor = [234, 88, 12]
+          else if (level === 'orta') data.cell.styles.textColor = [202, 138, 4]
+          else if (level === 'dusuk') data.cell.styles.textColor = [22, 163, 74]
+        }
+      }
+    })
+
+    // Tavsiyeler
+    let currentY = doc.lastAutoTable.finalY + 10
+    const findingsWithRec = clientFindings.filter(f => f.recommendation)
+    if (findingsWithRec.length > 0) {
+      if (currentY > 250) { doc.addPage(); currentY = 20 }
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Tavsiyeler', 14, currentY)
+      currentY += 6
+      findingsWithRec.forEach(f => {
+        if (currentY > 260) { doc.addPage(); currentY = 20 }
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`${f.finding_id} - ${f.title}`, 14, currentY)
+        currentY += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        const recLines = doc.splitTextToSize(f.recommendation, 180)
+        doc.text(recLines, 14, currentY)
+        currentY += recLines.length * 5 + 4
+      })
+    }
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.setTextColor(128, 128, 128)
+      doc.text(`VulnBoard // Gizli`, 14, 290)
+      doc.text(`${i}/${pageCount}`, 100, 290)
+      doc.text(`vulnboard.com`, 160, 290)
+    }
+
+    doc.save(`${clientName}-pentest-raporu-${date.replace(/\./g,'-')}.pdf`)
+  }
+
+  const generateExcel = () => {
+    const wb = XLSX.utils.book_new()
+    const levelMap = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
+    const statusMap = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
+
+    // Bulgular sheet
+    const findingsData = [
+      ['ID', 'Başlık', 'Seviye', 'CVSS', 'Durum', 'Etki Alanı', 'Tavsiye', 'Referanslar', 'Kapanış Notu', 'Tarih'],
+      ...clientFindings.map(f => [
+        f.finding_id || '-',
+        f.title,
+        levelMap[f.level] || f.level,
+        f.cvss_score || '-',
+        statusMap[f.status] || f.status,
+        f.impact_category || '-',
+        f.recommendation || '-',
+        f.references_links || '-',
+        f.closure_note || '-',
+        f.created_at?.slice(0,10) || '-'
+      ])
+    ]
+    const ws1 = XLSX.utils.aoa_to_sheet(findingsData)
+    ws1['!cols'] = [
+      {wch:10},{wch:40},{wch:10},{wch:8},{wch:12},{wch:20},{wch:40},{wch:30},{wch:30},{wch:12}
+    ]
+    XLSX.utils.book_append_sheet(wb, ws1, 'Bulgular')
+
+    // Özet sheet
+    const summaryData = [
+      ['VulnBoard - Pentest Raporu'],
+      ['Müşteri', clientName],
+      ['Tarih', new Date().toLocaleDateString('tr-TR')],
+      [''],
+      ['İstatistikler', ''],
+      ['Toplam Bulgu', stats.total],
+      ['Kritik', stats.critical],
+      ['Yüksek', stats.high],
+      ['Orta', stats.medium],
+      ['Düşük', stats.low],
+      ['Kapatıldı', stats.closed],
+      ['SLA Performansı', `${slaScore}%`],
+    ]
+    const ws2 = XLSX.utils.aoa_to_sheet(summaryData)
+    ws2['!cols'] = [{wch:20},{wch:30}]
+    XLSX.utils.book_append_sheet(wb, ws2, 'Özet')
+
+    XLSX.writeFile(wb, `${clientName}-pentest-raporu-${new Date().toISOString().slice(0,10)}.xlsx`)
+  }
+
   const generateReport = () => {
     setGenerating(true)
-    setTimeout(() => {
-      setGenerating(false)
+    try {
+      if (reportType === 'pdf') {
+        generatePDF()
+      } else {
+        generateExcel()
+      }
       const report = {
         id: Date.now(),
         title: `${clientName} - Pentest Raporu`,
@@ -325,8 +497,10 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
         findings: clientFindings.length
       }
       setGeneratedReports(prev => [report, ...prev])
-      alert(`${reportType.toUpperCase()} raporu oluşturuldu! Gerçek uygulamada indirilecek.`)
-    }, 2000)
+    } catch(e) {
+      alert('Rapor oluşturma hatası: ' + e.message)
+    }
+    setGenerating(false)
   }
 
   const levelLabel = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
