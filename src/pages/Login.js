@@ -93,7 +93,7 @@ export default function Login({ onLogin }) {
             lineHeight: 1.15, marginBottom: 16,
             letterSpacing: '-0.03em',
           }}>
-            Pentest Bulgularını<br />
+            Güvenlik Açıklarını<br />
             <span style={{
               background: 'linear-gradient(90deg, #dc2626, #f87171)',
               WebkitBackgroundClip: 'text',
@@ -102,7 +102,7 @@ export default function Login({ onLogin }) {
             Yönet.
           </h1>
           <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.6, maxWidth: 380 }}>
-            Pentest firmalarına özel bulgu yönetimi, müşteri portalı ve otomatik raporlama platformu.
+            Red team, blue team, pentest ve yazılım güvenliği ekipleri için bulgu yönetimi ve raporlama platformu.
           </p>
         </div>
 
@@ -248,7 +248,7 @@ export default function Login({ onLogin }) {
           display: 'flex', justifyContent: 'space-between',
           fontSize: 11, color: '#d1d5db',
         }}>
-          <span>🔒 SSL ile korunuyor</span>
+          <span style={{ display:'flex', alignItems:'center', gap:4 }}>🔒 SSL ile korunuyor</span>
           <span>v1.0 Beta</span>
         </div>
       </div>
