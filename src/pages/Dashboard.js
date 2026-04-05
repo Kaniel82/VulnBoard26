@@ -676,7 +676,7 @@ export default function Dashboard({ profile, onLogout }) {
   const [clients, setClients] = useState([])
   const [savingClient, setSavingClient] = useState(false)
   const [clientErrMsg, setClientErrMsg] = useState('')
-  const [newFinding, setNewFinding] = useState({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', recommendation:'', poc:'', client_id:'' })
+  const [newFinding, setNewFinding] = useState({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', recommendation:'', poc:'', description:'', observation:'', technical_details:'', client_id:'' })
   const [newClient, setNewClient] = useState({ name:'', email:'', password:'', full_name:'' })
   const [cvssParams, setCvssParams] = useState({ av:'0.85', ac:'0.77', pr:'0.85', ui:'0.85', c:'0.56', i:'0.56' })
 
@@ -718,7 +718,7 @@ export default function Dashboard({ profile, onLogout }) {
   const openModal = (finding) => { setSelectedFinding(finding); setShowModal(true) }
   const openEditModal = (e, finding) => {
     e.stopPropagation()
-    setEditFinding({ ...finding, impact_category: finding.impact_category ? finding.impact_category.split(', ') : [], recommendation: finding.recommendation || '', poc: finding.poc || '' })
+    setEditFinding({ ...finding, impact_category: finding.impact_category ? finding.impact_category.split(', ') : [], recommendation: finding.recommendation || '', poc: finding.poc || '', description: finding.description || '', observation: finding.observation || '', technical_details: finding.technical_details || '' })
     setShowEditModal(true)
   }
 
@@ -742,6 +742,9 @@ export default function Dashboard({ profile, onLogout }) {
       closure_note: editFinding.closure_note,
       recommendation: editFinding.recommendation,
       poc: editFinding.poc,
+      description: editFinding.description,
+      observation: editFinding.observation,
+      technical_details: editFinding.technical_details,
       client_id: editFinding.client_id
     }).eq('id', editFinding.id)
     setShowEditModal(false)
@@ -780,7 +783,7 @@ export default function Dashboard({ profile, onLogout }) {
       impact_category: newFinding.impact_category.join(', ')
     })
     setShowNewFinding(false)
-    setNewFinding({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', recommendation:'', poc:'', client_id:'' })
+    setNewFinding({ title:'', level:'kritik', status:'acik', cvss_score:'', impact_area:'', impact_category:[], references_links:'', closure_note:'', recommendation:'', poc:'', description:'', observation:'', technical_details:'', client_id:'' })
     setCvssParams({ av:'0.85', ac:'0.77', pr:'0.85', ui:'0.85', c:'0.56', i:'0.56' })
     fetchFindings()
   }
@@ -1150,6 +1153,27 @@ export default function Dashboard({ profile, onLogout }) {
                   </span>
                 )}
               </div>
+              {selectedFinding.description && (
+                <div style={{ marginBottom:12, padding:'10px 12px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6 }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Açıklama</div>
+                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.description}</div>
+                </div>
+              )}
+
+              {selectedFinding.observation && (
+                <div style={{ marginBottom:12, padding:'10px 12px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6 }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Gözlem</div>
+                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.observation}</div>
+                </div>
+              )}
+
+              {selectedFinding.technical_details && (
+                <div style={{ marginBottom:12, padding:'10px 12px', background:'#1e1e1e', border:'0.5px solid #333', borderRadius:6 }}>
+                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Teknik Detaylar</div>
+                  <div style={{ fontSize:12, color:'#e5e7eb', fontFamily:'monospace', whiteSpace:'pre-wrap', lineHeight:1.6 }}>{selectedFinding.technical_details}</div>
+                </div>
+              )}
+
               {selectedFinding.recommendation && (
                 <div style={{ marginBottom:12, padding:'10px 12px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:6 }}>
                   <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Tavsiye</div>
@@ -1316,6 +1340,27 @@ export default function Dashboard({ profile, onLogout }) {
               </div>
 
               <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Açıklama</label>
+                <textarea value={newFinding.description} onChange={e => setNewFinding({...newFinding, description: e.target.value})}
+                  placeholder="Zafiyetin genel açıklaması..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68 }} />
+              </div>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Gözlem</label>
+                <textarea value={newFinding.observation} onChange={e => setNewFinding({...newFinding, observation: e.target.value})}
+                  placeholder="Test sırasında gözlemlenen bulgular..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68 }} />
+              </div>
+
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Teknik Detaylar</label>
+                <textarea value={newFinding.technical_details} onChange={e => setNewFinding({...newFinding, technical_details: e.target.value})}
+                  placeholder="Teknik detaylar, payload, endpoint bilgileri..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68, fontFamily:'monospace' }} />
+              </div>
+
+              <div>
                 <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Tavsiye (Recommendation)</label>
                 <textarea value={newFinding.recommendation} onChange={e => setNewFinding({...newFinding, recommendation: e.target.value})}
                   placeholder="Bu zafiyetin nasıl giderileceğine dair tavsiyeler..."
@@ -1406,6 +1451,24 @@ export default function Dashboard({ profile, onLogout }) {
                     </label>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Açıklama</label>
+                <textarea value={editFinding.description || ''} onChange={e => setEditFinding({...editFinding, description: e.target.value})}
+                  placeholder="Zafiyetin genel açıklaması..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68 }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Gözlem</label>
+                <textarea value={editFinding.observation || ''} onChange={e => setEditFinding({...editFinding, observation: e.target.value})}
+                  placeholder="Test sırasında gözlemlenen bulgular..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68 }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Teknik Detaylar</label>
+                <textarea value={editFinding.technical_details || ''} onChange={e => setEditFinding({...editFinding, technical_details: e.target.value})}
+                  placeholder="Teknik detaylar, payload, endpoint bilgileri..."
+                  style={{ width:'100%', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6, padding:'7px 10px', color:'#111', fontSize:12, outline:'none', boxSizing:'border-box', resize:'vertical', minHeight:68, fontFamily:'monospace' }} />
               </div>
               <div>
                 <label style={{ display:'block', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:5 }}>Tavsiye (Recommendation)</label>
