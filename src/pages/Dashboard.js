@@ -875,14 +875,61 @@ export default function Dashboard({ profile, onLogout }) {
 
         {activePage === 'dashboard' && (
           <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
-            {/* Stats */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
-              {[['Toplam', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
+            {/* Stats Row 1 */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:10 }}>
+              {[['Toplam Bulgu', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
                 <div key={label} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
                   <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>{label}</div>
                   <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color }}>{val}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Stats Row 2 — Advanced Metrics */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+              {(() => {
+                const openFindings = findings.filter(f => f.status !== 'kapali')
+                const closedFindings = findings.filter(f => f.status === 'kapali')
+                
+                // MTTR — avg days to close (using created_at as proxy)
+                const mttr = closedFindings.length > 0
+                  ? Math.round(closedFindings.reduce((acc, f) => {
+                      const days = (new Date() - new Date(f.created_at)) / (1000*60*60*24)
+                      return acc + days
+                    }, 0) / closedFindings.length)
+                  : 0
+
+                // SLA Compliance
+                const slaCompliance = findings.length > 0 ? Math.round((closedFindings.length / findings.length) * 100) : 0
+                const slaColor = slaCompliance >= 80 ? '#16a34a' : slaCompliance >= 50 ? '#ca8a04' : '#dc2626'
+
+                // At Risk — critical/high open findings
+                const atRisk = findings.filter(f => (f.level === 'kritik' || f.level === 'yuksek') && f.status !== 'kapali').length
+
+                // Avg Aging — avg days open
+                const avgAging = openFindings.length > 0
+                  ? Math.round(openFindings.reduce((acc, f) => {
+                      const days = (new Date() - new Date(f.created_at)) / (1000*60*60*24)
+                      return acc + days
+                    }, 0) / openFindings.length)
+                  : 0
+
+                return [
+                  { label:'Ort. Düzeltme Süresi', value: mttr + ' gün', sub:'MTTR', color:'#7c3aed', icon:'⏱' },
+                  { label:'SLA Uyum', value: slaCompliance + '%', sub:`Hedef: 95%`, color: slaColor, icon:'📊' },
+                  { label:'Risk Altında', value: atRisk, sub:'Kritik + Yüksek açık', color: atRisk > 0 ? '#dc2626' : '#16a34a', icon:'⚠️' },
+                  { label:'Ort. Açık Kalma', value: avgAging + ' gün', sub:'Açık bulgular', color: avgAging > 14 ? '#dc2626' : avgAging > 7 ? '#ca8a04' : '#16a34a', icon:'📅' },
+                ].map((item, i) => (
+                  <div key={i} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+                      <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px' }}>{item.label}</div>
+                      <span style={{ fontSize:14 }}>{item.icon}</span>
+                    </div>
+                    <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color:item.color, marginBottom:2 }}>{item.value}</div>
+                    <div style={{ fontSize:10, color:'#9ca3af' }}>{item.sub}</div>
+                  </div>
+                ))
+              })()}
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
@@ -992,6 +1039,70 @@ export default function Dashboard({ profile, onLogout }) {
                       })()}
                     </svg>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Discovery vs Closure Trend */}
+            <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
+              <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:4 }}>Discovery vs Closure Trendi</div>
+              <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Son bulgular ve kapatmalar</div>
+              <div style={{ position:'relative', height:80 }}>
+                <svg width="100%" height="80" viewBox="0 0 600 80" preserveAspectRatio="none">
+                  {(() => {
+                    const months = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+                    const currentMonth = new Date().getMonth()
+                    const last6 = Array.from({length:6}, (_,i) => months[(currentMonth-5+i+12)%12])
+                    
+                    // Generate discovery data from findings
+                    const discoveryData = last6.map((_, i) => {
+                      const count = findings.filter(f => {
+                        const d = new Date(f.created_at)
+                        return d.getMonth() === (currentMonth-5+i+12)%12
+                      }).length
+                      return count
+                    })
+                    
+                    const closureData = last6.map((_, i) => {
+                      const count = findings.filter(f => {
+                        const d = new Date(f.created_at)
+                        return f.status === 'kapali' && d.getMonth() === (currentMonth-5+i+12)%12
+                      }).length
+                      return count
+                    })
+
+                    const maxVal = Math.max(...discoveryData, ...closureData, 1)
+                    const w = 600 / 5
+                    
+                    const toPath = (data) => data.map((v, i) => {
+                      const x = i * w
+                      const y = 70 - (v / maxVal) * 60
+                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+                    }).join(' ')
+
+                    return (
+                      <>
+                        <path d={toPath(discoveryData)} fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={toPath(closureData)} fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        {discoveryData.map((v, i) => (
+                          <circle key={`d${i}`} cx={i * w} cy={70 - (v / maxVal) * 60} r="3" fill="#dc2626" />
+                        ))}
+                        {closureData.map((v, i) => (
+                          <circle key={`c${i}`} cx={i * w} cy={70 - (v / maxVal) * 60} r="3" fill="#16a34a" />
+                        ))}
+                      </>
+                    )
+                  })()}
+                </svg>
+              </div>
+              <div style={{ display:'flex', gap:16, marginTop:8, justifyContent:'flex-end' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#6b7280' }}>
+                  <div style={{ width:20, height:2, background:'#dc2626', borderRadius:1 }} />
+                  Yeni Bulgular
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#6b7280' }}>
+                  <div style={{ width:20, height:2, background:'#16a34a', borderRadius:1 }} />
+                  Kapatmalar
                 </div>
               </div>
             </div>
