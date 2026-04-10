@@ -874,13 +874,19 @@ export default function Dashboard({ profile, onLogout }) {
 
 
         {activePage === 'dashboard' && (
-          <div style={{ flex:1, overflow:'auto', padding:'20px' }}>
+          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f8f9fa' }}>
             {/* Stats Row 1 */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:10 }}>
-              {[['Toplam Bulgu', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
-                <div key={label} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
-                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>{label}</div>
-                  <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color }}>{val}</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:12 }}>
+              {[
+                { label:'Toplam Bulgu', val: stats.total, color:'#111', bg:'#fff', border:'#e5e7eb', sub:'Tüm bulgular' },
+                { label:'Kritik', val: stats.critical, color:'#dc2626', bg:'#fef2f2', border:'#fecaca', sub:'Acil müdahale gerekli' },
+                { label:'Açık', val: stats.open, color:'#ea580c', bg:'#fff7ed', border:'#fed7aa', sub:'Devam eden' },
+                { label:'Kapatıldı', val: stats.closed, color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', sub:'Çözümlendi' },
+              ].map((item) => (
+                <div key={item.label} style={{ background:item.bg, border:`1px solid ${item.border}`, borderRadius:10, padding:'18px 20px' }}>
+                  <div style={{ fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8, fontWeight:500 }}>{item.label}</div>
+                  <div style={{ fontSize:36, fontWeight:800, fontFamily:'monospace', color:item.color, lineHeight:1, marginBottom:6 }}>{item.val}</div>
+                  <div style={{ fontSize:11, color:'#9ca3af' }}>{item.sub}</div>
                 </div>
               ))}
             </div>
@@ -920,13 +926,13 @@ export default function Dashboard({ profile, onLogout }) {
                   { label:'Risk Altında', value: atRisk, sub:'Kritik + Yüksek açık', color: atRisk > 0 ? '#dc2626' : '#16a34a', icon:'⚠️' },
                   { label:'Ort. Açık Kalma', value: avgAging + ' gün', sub:'Açık bulgular', color: avgAging > 14 ? '#dc2626' : avgAging > 7 ? '#ca8a04' : '#16a34a', icon:'📅' },
                 ].map((item, i) => (
-                  <div key={i} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
-                      <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px' }}>{item.label}</div>
-                      <span style={{ fontSize:14 }}>{item.icon}</span>
+                  <div key={i} style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'18px 20px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                      <div style={{ fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>{item.label}</div>
+                      <div style={{ width:32, height:32, borderRadius:8, background:'#f3f4f6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{item.icon}</div>
                     </div>
-                    <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color:item.color, marginBottom:2 }}>{item.value}</div>
-                    <div style={{ fontSize:10, color:'#9ca3af' }}>{item.sub}</div>
+                    <div style={{ fontSize:32, fontWeight:800, fontFamily:'monospace', color:item.color, lineHeight:1, marginBottom:6 }}>{item.value}</div>
+                    <div style={{ fontSize:11, color:'#9ca3af' }}>{item.sub}</div>
                   </div>
                 ))
               })()}
@@ -935,7 +941,8 @@ export default function Dashboard({ profile, onLogout }) {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
               {/* Zafiyet Seviyesi Dağılımı */}
               <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>Zafiyet Seviyesi Dağılımı</div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Zafiyet Seviyesi Dağılımı</div>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Seviyeye göre dağılım</div>
                 {[
                   { label:'Kritik', count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626', bg:'#fef2f2' },
                   { label:'Yüksek', count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c', bg:'#fff7ed' },
@@ -947,8 +954,8 @@ export default function Dashboard({ profile, onLogout }) {
                       <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
                       <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
                     </div>
-                    <div style={{ height:8, background:'#f3f4f6', borderRadius:4, overflow:'hidden' }}>
-                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:4, transition:'width 0.5s' }} />
+                    <div style={{ height:10, background:'#f3f4f6', borderRadius:5, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:5, transition:'width 0.5s' }} />
                     </div>
                   </div>
                 ))}
@@ -994,7 +1001,8 @@ export default function Dashboard({ profile, onLogout }) {
 
               {/* Durum Dağılımı */}
               <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>Durum Dağılımı</div>
+                <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Durum Dağılımı</div>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Açık / Devam / Kapatıldı</div>
                 {[
                   { label:'Açık',      count: findings.filter(f=>f.status==='acik').length,   color:'#2563eb', bg:'#eff6ff' },
                   { label:'Devam',     count: findings.filter(f=>f.status==='devam').length,   color:'#7c3aed', bg:'#faf5ff' },
@@ -1005,8 +1013,8 @@ export default function Dashboard({ profile, onLogout }) {
                       <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
                       <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
                     </div>
-                    <div style={{ height:8, background:'#f3f4f6', borderRadius:4, overflow:'hidden' }}>
-                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:4, transition:'width 0.5s' }} />
+                    <div style={{ height:10, background:'#f3f4f6', borderRadius:5, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:5, transition:'width 0.5s' }} />
                     </div>
                   </div>
                 ))}
@@ -1045,7 +1053,7 @@ export default function Dashboard({ profile, onLogout }) {
 
             {/* Discovery vs Closure Trend */}
             <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
-              <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:4 }}>Discovery vs Closure Trendi</div>
+              <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Discovery vs Closure Trendi</div>
               <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Son bulgular ve kapatmalar</div>
               <div style={{ position:'relative', height:80 }}>
                 <svg width="100%" height="80" viewBox="0 0 600 80" preserveAspectRatio="none">
@@ -1109,7 +1117,8 @@ export default function Dashboard({ profile, onLogout }) {
 
             {/* SLA Performansı */}
             <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
-              <div style={{ fontSize:12, fontWeight:500, color:'#111', marginBottom:14 }}>SLA Performansı</div>
+              <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>SLA Performansı</div>
+              <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Hedef kapatma oranları</div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
                 {[
                   { label:'Kritik SLA', target:'24 saat', color:'#dc2626',
