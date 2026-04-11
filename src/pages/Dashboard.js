@@ -874,278 +874,254 @@ export default function Dashboard({ profile, onLogout }) {
 
 
         {activePage === 'dashboard' && (
-          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f8f9fa' }}>
-            {/* Stats Row 1 */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:12 }}>
-              {[
-                { label:'Toplam Bulgu', val: stats.total, color:'#111', bg:'#fff', border:'#e5e7eb', sub:'Tüm bulgular' },
-                { label:'Kritik', val: stats.critical, color:'#dc2626', bg:'#fef2f2', border:'#fecaca', sub:'Acil müdahale gerekli' },
-                { label:'Açık', val: stats.open, color:'#ea580c', bg:'#fff7ed', border:'#fed7aa', sub:'Devam eden' },
-                { label:'Kapatıldı', val: stats.closed, color:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', sub:'Çözümlendi' },
-              ].map((item) => (
-                <div key={item.label} style={{ background:item.bg, border:`1px solid ${item.border}`, borderRadius:10, padding:'18px 20px' }}>
-                  <div style={{ fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8, fontWeight:500 }}>{item.label}</div>
-                  <div style={{ fontSize:36, fontWeight:800, fontFamily:'monospace', color:item.color, lineHeight:1, marginBottom:6 }}>{item.val}</div>
-                  <div style={{ fontSize:11, color:'#9ca3af' }}>{item.sub}</div>
+          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f0f2f5' }}>
+
+            {/* Row 1 — Main Stats */}
+            <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16, marginBottom:16 }}>
+
+              {/* Critical Vulnerabilities — Big Card */}
+              <div style={{ background:'#1a1a2e', borderRadius:12, padding:'24px 28px', color:'#fff', position:'relative', overflow:'hidden' }}>
+                <div style={{ position:'absolute', top:0, right:0, width:120, height:120, background:'rgba(220,38,38,0.08)', borderRadius:'50%', transform:'translate(30px,-30px)' }} />
+                <div style={{ fontSize:11, fontWeight:600, color:'#dc2626', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>KRİTİK ZAFİYETLER</div>
+                <div style={{ fontSize:11, color:'#6b7280', marginBottom:16 }}>Acil müdahale gerekli — SLA: 24 saat</div>
+                <div style={{ display:'flex', alignItems:'flex-end', gap:16, marginBottom:20 }}>
+                  <div style={{ fontSize:64, fontWeight:800, fontFamily:'monospace', lineHeight:1, color:'#fff' }}>{stats.critical}</div>
+                  <div style={{ paddingBottom:8 }}>
+                    <div style={{ fontSize:13, color:'#9ca3af', marginBottom:4 }}>açık</div>
+                    {findings.filter(f=>f.level==='kritik'&&f.status!=='kapali').length > 0 && (
+                      <div style={{ fontSize:11, color:'#dc2626', display:'flex', alignItems:'center', gap:4 }}>
+                        ⚠ {findings.filter(f=>f.level==='kritik'&&f.status!=='kapali').length} SLA ihlali riski
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, borderTop:'1px solid rgba(255,255,255,0.08)', paddingTop:16 }}>
+                  {[
+                    { label:'YÜKSEK', val: findings.filter(f=>f.level==='yuksek').length, color:'#f97316' },
+                    { label:'ORTA', val: findings.filter(f=>f.level==='orta').length, color:'#eab308' },
+                    { label:'DÜŞÜK', val: findings.filter(f=>f.level==='dusuk').length, color:'#22c55e' },
+                    { label:'TOPLAM AÇIK', val: stats.open, color:'#94a3b8' },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <div style={{ fontSize:22, fontWeight:800, fontFamily:'monospace', color:item.color }}>{item.val}</div>
+                      <div style={{ fontSize:9, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:2 }}>{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SLA Compliance */}
+              <div style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
+                <div style={{ fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>SLA UYUM</div>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Hedef: %95</div>
+                {(() => {
+                  const rate = findings.length > 0 ? Math.round((stats.closed/findings.length)*100) : 0
+                  const color = rate >= 80 ? '#16a34a' : rate >= 50 ? '#ca8a04' : '#dc2626'
+                  return (
+                    <>
+                      <div style={{ fontSize:52, fontWeight:800, fontFamily:'monospace', color, lineHeight:1, marginBottom:16 }}>{rate}%</div>
+                      <div style={{ height:6, background:'#f3f4f6', borderRadius:3, marginBottom:8, overflow:'hidden' }}>
+                        <div style={{ height:'100%', width:`${rate}%`, background:color, borderRadius:3, transition:'width 0.5s' }} />
+                      </div>
+                      <div style={{ fontSize:11, color: rate < 95 ? '#dc2626' : '#16a34a', display:'flex', alignItems:'center', gap:4 }}>
+                        {rate < 95 ? `↘ Hedefin ${95-rate}% altında` : '↗ Hedef karşılandı'}
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* SLA Breaches */}
+              <div style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
+                <div style={{ fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>SLA İHLALİ</div>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>SLA süresi aşıldı</div>
+                {(() => {
+                  const breaches = findings.filter(f => (f.level==='kritik'||f.level==='yuksek') && f.status!=='kapali').length
+                  return (
+                    <>
+                      <div style={{ fontSize:52, fontWeight:800, fontFamily:'monospace', color: breaches>0?'#dc2626':'#16a34a', lineHeight:1, marginBottom:16 }}>{breaches}</div>
+                      <div style={{ fontSize:11, color:'#dc2626' }}>
+                        {breaches > 0 ? `${breaches} bulgu risk altında` : '✓ İhlal yok'}
+                      </div>
+                      <div style={{ fontSize:11, color:'#9ca3af', marginTop:4 }}>48 saat içinde</div>
+                    </>
+                  )
+                })()}
+              </div>
             </div>
 
-            {/* Stats Row 2 — Advanced Metrics */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+            {/* Row 2 — MTTR, At Risk, Avg Aging */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:16 }}>
               {(() => {
                 const openFindings = findings.filter(f => f.status !== 'kapali')
                 const closedFindings = findings.filter(f => f.status === 'kapali')
-                
-                // MTTR — avg days to close (using created_at as proxy)
                 const mttr = closedFindings.length > 0
-                  ? Math.round(closedFindings.reduce((acc, f) => {
-                      const days = (new Date() - new Date(f.created_at)) / (1000*60*60*24)
-                      return acc + days
-                    }, 0) / closedFindings.length)
+                  ? Math.round(closedFindings.reduce((acc,f) => acc + (new Date()-new Date(f.created_at))/(1000*60*60*24), 0) / closedFindings.length)
                   : 0
-
-                // SLA Compliance
-                const slaCompliance = findings.length > 0 ? Math.round((closedFindings.length / findings.length) * 100) : 0
-                const slaColor = slaCompliance >= 80 ? '#16a34a' : slaCompliance >= 50 ? '#ca8a04' : '#dc2626'
-
-                // At Risk — critical/high open findings
-                const atRisk = findings.filter(f => (f.level === 'kritik' || f.level === 'yuksek') && f.status !== 'kapali').length
-
-                // Avg Aging — avg days open
+                const atRisk = findings.filter(f=>(f.level==='kritik'||f.level==='yuksek')&&f.status!=='kapali').length
                 const avgAging = openFindings.length > 0
-                  ? Math.round(openFindings.reduce((acc, f) => {
-                      const days = (new Date() - new Date(f.created_at)) / (1000*60*60*24)
-                      return acc + days
-                    }, 0) / openFindings.length)
+                  ? Math.round(openFindings.reduce((acc,f) => acc + (new Date()-new Date(f.created_at))/(1000*60*60*24), 0) / openFindings.length)
                   : 0
 
                 return [
-                  { label:'Ort. Düzeltme Süresi', value: mttr + ' gün', sub:'MTTR', color:'#7c3aed', icon:'⏱' },
-                  { label:'SLA Uyum', value: slaCompliance + '%', sub:`Hedef: 95%`, color: slaColor, icon:'📊' },
-                  { label:'Risk Altında', value: atRisk, sub:'Kritik + Yüksek açık', color: atRisk > 0 ? '#dc2626' : '#16a34a', icon:'⚠️' },
-                  { label:'Ort. Açık Kalma', value: avgAging + ' gün', sub:'Açık bulgular', color: avgAging > 14 ? '#dc2626' : avgAging > 7 ? '#ca8a04' : '#16a34a', icon:'📅' },
-                ].map((item, i) => (
-                  <div key={i} style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, padding:'18px 20px' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-                      <div style={{ fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:500 }}>{item.label}</div>
-                      <div style={{ width:32, height:32, borderRadius:8, background:'#f3f4f6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{item.icon}</div>
+                  { label:'ORT. MTTR', value: mttr, unit:'gün', sub:'Ortalama düzeltme süresi', color:'#7c3aed', trend: mttr > 7 ? '↗ Yüksek' : '↘ İyi', trendColor: mttr > 7 ? '#dc2626' : '#16a34a' },
+                  { label:'RİSK ALTINDA', value: atRisk, unit:'', sub:'48 saat içinde ihlal', color: atRisk>0?'#dc2626':'#16a34a', trend: atRisk>0?'Acil müdahale':'✓ Güvende', trendColor: atRisk>0?'#dc2626':'#16a34a' },
+                  { label:'ORT. AÇIK KALMA', value: avgAging, unit:'gün', sub:'Tüm açık bulgular', color: avgAging>14?'#dc2626':avgAging>7?'#ca8a04':'#16a34a', trend: avgAging>14?'↗ Kritik seviye':'↘ Normal', trendColor: avgAging>14?'#dc2626':'#16a34a' },
+                ].map((item,i) => (
+                  <div key={i} style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
+                    <div style={{ fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>{item.label}</div>
+                    <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>{item.sub}</div>
+                    <div style={{ display:'flex', alignItems:'flex-end', gap:6, marginBottom:12 }}>
+                      <div style={{ fontSize:48, fontWeight:800, fontFamily:'monospace', color:item.color, lineHeight:1 }}>{item.value}</div>
+                      {item.unit && <div style={{ fontSize:16, color:'#9ca3af', paddingBottom:6 }}>{item.unit}</div>}
                     </div>
-                    <div style={{ fontSize:32, fontWeight:800, fontFamily:'monospace', color:item.color, lineHeight:1, marginBottom:6 }}>{item.value}</div>
-                    <div style={{ fontSize:11, color:'#9ca3af' }}>{item.sub}</div>
+                    <div style={{ fontSize:11, color:item.trendColor, fontWeight:500 }}>{item.trend}</div>
                   </div>
                 ))
               })()}
             </div>
 
+            {/* Row 3 — Charts */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
-              {/* Zafiyet Seviyesi Dağılımı */}
-              <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
-                <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Zafiyet Seviyesi Dağılımı</div>
-                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Seviyeye göre dağılım</div>
-                {[
-                  { label:'Kritik', count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626', bg:'#fef2f2' },
-                  { label:'Yüksek', count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c', bg:'#fff7ed' },
-                  { label:'Orta',   count: findings.filter(f=>f.level==='orta').length,   color:'#ca8a04', bg:'#fefce8' },
-                  { label:'Düşük',  count: findings.filter(f=>f.level==='dusuk').length,  color:'#16a34a', bg:'#f0fdf4' },
-                ].map(item => (
-                  <div key={item.label} style={{ marginBottom:10 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                      <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
-                      <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
-                    </div>
-                    <div style={{ height:10, background:'#f3f4f6', borderRadius:5, overflow:'hidden' }}>
-                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:5, transition:'width 0.5s' }} />
-                    </div>
-                  </div>
-                ))}
-                <div style={{ marginTop:14, display:'flex', justifyContent:'center', alignItems:'center', gap:16 }}>
-                  <svg viewBox="0 0 36 36" style={{ width:90, height:90, transform:'rotate(-90deg)', flexShrink:0 }}>
+
+              {/* Severity Distribution */}
+              <div style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Zafiyet Dağılımı</div>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Seviyeye göre açık bulgular</div>
+                <div style={{ display:'flex', gap:24, alignItems:'center' }}>
+                  <svg viewBox="0 0 36 36" style={{ width:110, height:110, transform:'rotate(-90deg)', flexShrink:0 }}>
                     {(() => {
                       const total = findings.length || 1
                       const segs = [
                         { count: findings.filter(f=>f.level==='kritik').length, color:'#dc2626' },
-                        { count: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c' },
-                        { count: findings.filter(f=>f.level==='orta').length,   color:'#ca8a04' },
-                        { count: findings.filter(f=>f.level==='dusuk').length,  color:'#16a34a' },
+                        { count: findings.filter(f=>f.level==='yuksek').length, color:'#f97316' },
+                        { count: findings.filter(f=>f.level==='orta').length, color:'#eab308' },
+                        { count: findings.filter(f=>f.level==='dusuk').length, color:'#22c55e' },
                       ]
                       const r = 15.9155
                       const circ = 2 * Math.PI * r
                       let offset = 0
-                      return segs.map((seg, i) => {
-                        const pct = seg.count / total
-                        const dash = pct * circ
-                        const gap = circ - dash
-                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="4" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset * circ} />
+                      return segs.map((seg,i) => {
+                        const pct = seg.count/total
+                        const dash = pct*circ
+                        const gap = circ-dash
+                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
                         offset += pct
                         return el
                       })
                     })()}
                   </svg>
-                  <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                  <div style={{ flex:1 }}>
                     {[
                       { label:'Kritik', color:'#dc2626', count: findings.filter(f=>f.level==='kritik').length },
-                      { label:'Yüksek', color:'#ea580c', count: findings.filter(f=>f.level==='yuksek').length },
-                      { label:'Orta',   color:'#ca8a04', count: findings.filter(f=>f.level==='orta').length },
-                      { label:'Düşük',  color:'#16a34a', count: findings.filter(f=>f.level==='dusuk').length },
+                      { label:'Yüksek', color:'#f97316', count: findings.filter(f=>f.level==='yuksek').length },
+                      { label:'Orta', color:'#eab308', count: findings.filter(f=>f.level==='orta').length },
+                      { label:'Düşük', color:'#22c55e', count: findings.filter(f=>f.level==='dusuk').length },
                     ].map(s => (
-                      <div key={s.label} style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <div style={{ width:8, height:8, borderRadius:'50%', background:s.color, flexShrink:0 }} />
-                        <span style={{ fontSize:11, color:'#6b7280' }}>{s.label}</span>
-                        <span style={{ fontSize:11, fontFamily:'monospace', fontWeight:500, color:s.color, marginLeft:'auto' }}>{s.count}</span>
+                      <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{ width:10, height:10, borderRadius:2, background:s.color, flexShrink:0 }} />
+                          <span style={{ fontSize:12, color:'#374151' }}>{s.label}</span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{ width:80, height:6, background:'#f3f4f6', borderRadius:3, overflow:'hidden' }}>
+                            <div style={{ height:'100%', width: findings.length ? `${(s.count/findings.length)*100}%` : '0%', background:s.color, borderRadius:3 }} />
+                          </div>
+                          <span style={{ fontSize:13, fontWeight:700, fontFamily:'monospace', color:s.color, width:20, textAlign:'right' }}>{s.count}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Durum Dağılımı */}
-              <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+              {/* Status Distribution */}
+              <div style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
                 <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Durum Dağılımı</div>
-                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Açık / Devam / Kapatıldı</div>
-                {[
-                  { label:'Açık',      count: findings.filter(f=>f.status==='acik').length,   color:'#2563eb', bg:'#eff6ff' },
-                  { label:'Devam',     count: findings.filter(f=>f.status==='devam').length,   color:'#7c3aed', bg:'#faf5ff' },
-                  { label:'Kapatıldı', count: findings.filter(f=>f.status==='kapali').length,  color:'#16a34a', bg:'#f0fdf4' },
-                ].map(item => (
-                  <div key={item.label} style={{ marginBottom:10 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                      <span style={{ fontSize:12, color:'#374151' }}>{item.label}</span>
-                      <span style={{ fontSize:12, fontFamily:'monospace', fontWeight:500, color:item.color }}>{item.count}</span>
-                    </div>
-                    <div style={{ height:10, background:'#f3f4f6', borderRadius:5, overflow:'hidden' }}>
-                      <div style={{ height:'100%', width: findings.length ? `${(item.count/findings.length)*100}%` : '0%', background:item.color, borderRadius:5, transition:'width 0.5s' }} />
-                    </div>
-                  </div>
-                ))}
-
-                {/* Pasta grafik basit */}
-                <div style={{ marginTop:14, display:'flex', justifyContent:'center' }}>
-                  <div style={{ position:'relative', width:80, height:80 }}>
-                    <svg viewBox="0 0 36 36" style={{ width:80, height:80, transform:'rotate(-90deg)' }}>
-                      {(() => {
-                        const total = findings.length || 1
-                        const acik = findings.filter(f=>f.status==='acik').length
-                        const devam = findings.filter(f=>f.status==='devam').length
-                        const kapali = findings.filter(f=>f.status==='kapali').length
-                        const r = 15.9155
-                        const circ = 2 * Math.PI * r
-                        let offset = 0
-                        const segments = [
-                          { count: acik, color: '#2563eb' },
-                          { count: devam, color: '#7c3aed' },
-                          { count: kapali, color: '#16a34a' },
-                        ]
-                        return segments.map((seg, i) => {
-                          const pct = seg.count / total
-                          const dash = pct * circ
-                          const gap = circ - dash
-                          const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="3.5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset * circ} />
-                          offset += pct
-                          return el
-                        })
-                      })()}
-                    </svg>
+                <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Açık / Devam / Kapatıldı</div>
+                <div style={{ display:'flex', gap:24, alignItems:'center' }}>
+                  <svg viewBox="0 0 36 36" style={{ width:110, height:110, transform:'rotate(-90deg)', flexShrink:0 }}>
+                    {(() => {
+                      const total = findings.length || 1
+                      const segs = [
+                        { count: findings.filter(f=>f.status==='acik').length, color:'#3b82f6' },
+                        { count: findings.filter(f=>f.status==='devam').length, color:'#8b5cf6' },
+                        { count: findings.filter(f=>f.status==='kapali').length, color:'#22c55e' },
+                      ]
+                      const r = 15.9155
+                      const circ = 2 * Math.PI * r
+                      let offset = 0
+                      return segs.map((seg,i) => {
+                        const pct = seg.count/total
+                        const dash = pct*circ
+                        const gap = circ-dash
+                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
+                        offset += pct
+                        return el
+                      })
+                    })()}
+                  </svg>
+                  <div style={{ flex:1 }}>
+                    {[
+                      { label:'Açık', color:'#3b82f6', count: findings.filter(f=>f.status==='acik').length },
+                      { label:'Devam', color:'#8b5cf6', count: findings.filter(f=>f.status==='devam').length },
+                      { label:'Kapatıldı', color:'#22c55e', count: findings.filter(f=>f.status==='kapali').length },
+                    ].map(s => (
+                      <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{ width:10, height:10, borderRadius:2, background:s.color, flexShrink:0 }} />
+                          <span style={{ fontSize:12, color:'#374151' }}>{s.label}</span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                          <div style={{ width:80, height:6, background:'#f3f4f6', borderRadius:3, overflow:'hidden' }}>
+                            <div style={{ height:'100%', width: findings.length ? `${(s.count/findings.length)*100}%` : '0%', background:s.color, borderRadius:3 }} />
+                          </div>
+                          <span style={{ fontSize:13, fontWeight:700, fontFamily:'monospace', color:s.color, width:20, textAlign:'right' }}>{s.count}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Discovery vs Closure Trend */}
-            <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px', marginBottom:16 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Discovery vs Closure Trendi</div>
-              <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Son bulgular ve kapatmalar</div>
-              <div style={{ position:'relative', height:80 }}>
-                <svg width="100%" height="80" viewBox="0 0 600 80" preserveAspectRatio="none">
-                  {(() => {
-                    const months = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
-                    const currentMonth = new Date().getMonth()
-                    const last6 = Array.from({length:6}, (_,i) => months[(currentMonth-5+i+12)%12])
-                    
-                    // Generate discovery data from findings
-                    const discoveryData = last6.map((_, i) => {
-                      const count = findings.filter(f => {
-                        const d = new Date(f.created_at)
-                        return d.getMonth() === (currentMonth-5+i+12)%12
-                      }).length
-                      return count
-                    })
-                    
-                    const closureData = last6.map((_, i) => {
-                      const count = findings.filter(f => {
-                        const d = new Date(f.created_at)
-                        return f.status === 'kapali' && d.getMonth() === (currentMonth-5+i+12)%12
-                      }).length
-                      return count
-                    })
-
-                    const maxVal = Math.max(...discoveryData, ...closureData, 1)
-                    const w = 600 / 5
-                    
-                    const toPath = (data) => data.map((v, i) => {
-                      const x = i * w
-                      const y = 70 - (v / maxVal) * 60
-                      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
-                    }).join(' ')
-
-                    return (
-                      <>
-                        <path d={toPath(discoveryData)} fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d={toPath(closureData)} fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        {discoveryData.map((v, i) => (
-                          <circle key={`d${i}`} cx={i * w} cy={70 - (v / maxVal) * 60} r="3" fill="#dc2626" />
-                        ))}
-                        {closureData.map((v, i) => (
-                          <circle key={`c${i}`} cx={i * w} cy={70 - (v / maxVal) * 60} r="3" fill="#16a34a" />
-                        ))}
-                      </>
-                    )
-                  })()}
-                </svg>
-              </div>
-              <div style={{ display:'flex', gap:16, marginTop:8, justifyContent:'flex-end' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#6b7280' }}>
-                  <div style={{ width:20, height:2, background:'#dc2626', borderRadius:1 }} />
-                  Yeni Bulgular
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#6b7280' }}>
-                  <div style={{ width:20, height:2, background:'#16a34a', borderRadius:1 }} />
-                  Kapatmalar
-                </div>
-              </div>
-            </div>
-
-            {/* SLA Performansı */}
-            <div style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'16px' }}>
+            {/* Row 4 — SLA Performance */}
+            <div style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
               <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>SLA Performansı</div>
-              <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>Hedef kapatma oranları</div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+              <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Seviyeye göre hedef kapatma oranları</div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
                 {[
-                  { label:'Kritik SLA', target:'24 saat', color:'#dc2626',
+                  { label:'KRİTİK', target:'24 saat', color:'#dc2626',
                     closed: findings.filter(f=>f.level==='kritik'&&f.status==='kapali').length,
                     total: findings.filter(f=>f.level==='kritik').length },
-                  { label:'Yüksek SLA', target:'7 gün', color:'#ea580c',
+                  { label:'YÜKSEK', target:'7 gün', color:'#f97316',
                     closed: findings.filter(f=>f.level==='yuksek'&&f.status==='kapali').length,
                     total: findings.filter(f=>f.level==='yuksek').length },
-                  { label:'Orta SLA', target:'30 gün', color:'#ca8a04',
+                  { label:'ORTA', target:'30 gün', color:'#eab308',
                     closed: findings.filter(f=>f.level==='orta'&&f.status==='kapali').length,
                     total: findings.filter(f=>f.level==='orta').length },
                 ].map(item => {
-                  const rate = item.total > 0 ? Math.round((item.closed / item.total) * 100) : 0
+                  const rate = item.total > 0 ? Math.round((item.closed/item.total)*100) : 0
+                  const color = rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626'
                   return (
-                    <div key={item.label} style={{ background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px' }}>
-                      <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace', marginBottom:4 }}>{item.label}</div>
-                      <div style={{ fontSize:10, color:'#9ca3af', marginBottom:8 }}>Hedef: {item.target}</div>
-                      <div style={{ fontSize:24, fontWeight:700, fontFamily:'monospace', color: rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626', marginBottom:6 }}>{rate}%</div>
-                      <div style={{ height:6, background:'#e5e7eb', borderRadius:3, overflow:'hidden' }}>
-                        <div style={{ height:'100%', width:`${rate}%`, background: rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626', borderRadius:3 }} />
+                    <div key={item.label} style={{ background:'#f9fafb', borderRadius:10, padding:'20px', border:'1px solid #f3f4f6' }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
+                        <div>
+                          <div style={{ fontSize:11, fontWeight:600, color:item.color, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2 }}>{item.label}</div>
+                          <div style={{ fontSize:10, color:'#9ca3af' }}>Hedef: {item.target}</div>
+                        </div>
+                        <div style={{ fontSize:28, fontWeight:800, fontFamily:'monospace', color }}>{rate}%</div>
                       </div>
-                      <div style={{ fontSize:10, color:'#9ca3af', marginTop:4, fontFamily:'monospace' }}>{item.closed}/{item.total} kapatıldı</div>
+                      <div style={{ height:8, background:'#e5e7eb', borderRadius:4, overflow:'hidden', marginBottom:8 }}>
+                        <div style={{ height:'100%', width:`${rate}%`, background:color, borderRadius:4, transition:'width 0.5s' }} />
+                      </div>
+                      <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace' }}>{item.closed}/{item.total} kapatıldı</div>
                     </div>
                   )
                 })}
               </div>
             </div>
+
           </div>
         )}
 
