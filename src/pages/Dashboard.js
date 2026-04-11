@@ -874,14 +874,14 @@ export default function Dashboard({ profile, onLogout }) {
 
 
         {activePage === 'dashboard' && (
-          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f0f2f5' }}>
+          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f8f9fa' }}>
 
             {/* Row 1 — Main Stats */}
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16, marginBottom:16 }}>
 
               {/* Critical Vulnerabilities — Big Card */}
-              <div style={{ background:'#1a1a2e', borderRadius:12, padding:'24px 28px', color:'#fff', position:'relative', overflow:'hidden' }}>
-                <div style={{ position:'absolute', top:0, right:0, width:120, height:120, background:'rgba(220,38,38,0.08)', borderRadius:'50%', transform:'translate(30px,-30px)' }} />
+              <div style={{ background:'#fff', borderRadius:12, padding:'24px 28px', color:'#111', position:'relative', overflow:'hidden', border:'1px solid #e5e7eb' }}>
+                <div style={{ position:'absolute', top:0, right:0, width:120, height:120, background:'rgba(220,38,38,0.04)', borderRadius:'50%', transform:'translate(30px,-30px)' }} />
                 <div style={{ fontSize:11, fontWeight:600, color:'#dc2626', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>KRİTİK ZAFİYETLER</div>
                 <div style={{ fontSize:11, color:'#6b7280', marginBottom:16 }}>Acil müdahale gerekli — SLA: 24 saat</div>
                 <div style={{ display:'flex', alignItems:'flex-end', gap:16, marginBottom:20 }}>
@@ -895,7 +895,7 @@ export default function Dashboard({ profile, onLogout }) {
                     )}
                   </div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, borderTop:'1px solid rgba(255,255,255,0.08)', paddingTop:16 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, borderTop:'1px solid #f3f4f6', paddingTop:16 }}>
                   {[
                     { label:'YÜKSEK', val: findings.filter(f=>f.level==='yuksek').length, color:'#f97316' },
                     { label:'ORTA', val: findings.filter(f=>f.level==='orta').length, color:'#eab308' },
@@ -904,7 +904,7 @@ export default function Dashboard({ profile, onLogout }) {
                   ].map(item => (
                     <div key={item.label}>
                       <div style={{ fontSize:22, fontWeight:800, fontFamily:'monospace', color:item.color }}>{item.val}</div>
-                      <div style={{ fontSize:9, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:2 }}>{item.label}</div>
+                      <div style={{ fontSize:9, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.08em', marginTop:2 }}>{item.label}</div>
                     </div>
                   ))}
                 </div>
