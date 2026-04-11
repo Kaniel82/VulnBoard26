@@ -670,6 +670,9 @@ export default function Dashboard({ profile, onLogout }) {
   const [editFinding, setEditFinding] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
       const [showNewFinding, setShowNewFinding] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [levelFilter, setLevelFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [showNewClient, setShowNewClient] = useState(false)
   const [activePage, setActivePage] = useState('dashboard')
   const [loading, setLoading] = useState(true)
@@ -1141,15 +1144,83 @@ export default function Dashboard({ profile, onLogout }) {
 
         {activePage === 'findings' && (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'16px 20px', flexShrink:0 }}>
-              {[['Toplam', stats.total, '#111'], ['Kritik', stats.critical, '#dc2626'], ['Açık', stats.open, '#ea580c'], ['Kapatıldı', stats.closed, '#16a34a']].map(([label, val, color]) => (
-                <div key={label} style={{ background:'#fff', border:'0.5px solid #e5e7eb', borderRadius:8, padding:'12px 14px' }}>
-                  <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>{label}</div>
-                  <div style={{ fontSize:22, fontWeight:700, fontFamily:'monospace', color }}>{val}</div>
+            {/* Findings Header Stats */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, padding:'20px 20px 16px', flexShrink:0 }}>
+              {[
+                { label:'KRİTİK', val: stats.critical, color:'#dc2626', bg:'#fef2f2', border:'#fecaca', icon:'🛡' },
+                { label:'YÜKSEK', val: findings.filter(f=>f.level==='yuksek').length, color:'#ea580c', bg:'#fff7ed', border:'#fed7aa', icon:'⚠' },
+                { label:'SLA İHLALİ', val: findings.filter(f=>(f.level==='kritik'||f.level==='yuksek')&&f.status!=='kapali').length, color:'#dc2626', bg:'#fef2f2', border:'#fecaca', icon:'⏰' },
+                { label:'TOPLAM AÇIK', val: stats.open, color:'#111', bg:'#fff', border:'#e5e7eb', icon:'📋' },
+              ].map((item) => (
+                <div key={item.label} style={{ background:item.bg, border:`1px solid ${item.border}`, borderRadius:10, padding:'16px 18px', display:'flex', alignItems:'center', gap:14 }}>
+                  <div style={{ width:40, height:40, borderRadius:8, background:`${item.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize:28, fontWeight:800, color:item.color, lineHeight:1 }}>{item.val}</div>
+                    <div style={{ fontSize:10, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.1em', marginTop:3, fontWeight:600 }}>{item.label}</div>
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ flex:1, overflow:'auto', padding:'0 20px 20px' }}>
+
+            {/* Findings Table Container */}
+            <div style={{ margin:'0 20px 20px', background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, overflow:'hidden', flex:1, display:'flex', flexDirection:'column' }}>
+              {/* Table Header */}
+              <div style={{ padding:'16px 20px', borderBottom:'1px solid #f3f4f6', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+                <div>
+                  <div style={{ fontSize:14, fontWeight:700, color:'#111' }}>Zafiyet Envanteri</div>
+                  <div style={{ fontSize:11, color:'#9ca3af', marginTop:2 }}>Tüm bulgular — seviye ve yaşa göre sıralı</div>
+                </div>
+                <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                  <div style={{ fontSize:11, color:'#9ca3af', fontFamily:'monospace' }}>{findings.length} zafiyet</div>
+                  {isPentest && (
+                    <button onClick={() => setShowNewFinding(true)} style={{ background:'#111', color:'#fff', border:'none', padding:'8px 16px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+                      + Bulgu Ekle
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Search + Filters */}
+              <div style={{ padding:'12px 20px', borderBottom:'1px solid #f3f4f6', display:'flex', gap:10, alignItems:'center', flexShrink:0, flexWrap:'wrap' }}>
+                <div style={{ position:'relative', flex:1, minWidth:200 }}>
+                  <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:14 }}>🔍</span>
+                  <input
+                    placeholder="CVE ID, başlık veya etki alanı ara..."
+                    onChange={e => setSearchQuery(e.target.value)}
+                    value={searchQuery || ''}
+                    style={{ width:'100%', background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:8, padding:'8px 12px 8px 36px', fontSize:13, outline:'none', boxSizing:'border-box', color:'#111' }}
+                  />
+                </div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                  <div style={{ fontSize:11, color:'#6b7280', fontWeight:500, display:'flex', alignItems:'center' }}>SEVİYE:</div>
+                  {[
+                    { key:'', label:'Tümü', color:'#6b7280', bg:'#f3f4f6' },
+                    { key:'kritik', label:'Kritik', color:'#dc2626', bg:'#fef2f2' },
+                    { key:'yuksek', label:'Yüksek', color:'#ea580c', bg:'#fff7ed' },
+                    { key:'orta', label:'Orta', color:'#ca8a04', bg:'#fefce8' },
+                    { key:'dusuk', label:'Düşük', color:'#16a34a', bg:'#f0fdf4' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setLevelFilter(f.key)}
+                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${levelFilter===f.key ? f.color : '#e5e7eb'}`, background: levelFilter===f.key ? f.bg : '#fff', color: levelFilter===f.key ? f.color : '#6b7280', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                      {f.label}
+                    </button>
+                  ))}
+                  <div style={{ fontSize:11, color:'#6b7280', fontWeight:500, display:'flex', alignItems:'center', marginLeft:8 }}>DURUM:</div>
+                  {[
+                    { key:'', label:'Tümü' },
+                    { key:'acik', label:'Açık' },
+                    { key:'devam', label:'Devam' },
+                    { key:'kapali', label:'Kapatıldı' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setStatusFilter(f.key)}
+                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${statusFilter===f.key ? '#111' : '#e5e7eb'}`, background: statusFilter===f.key ? '#111' : '#fff', color: statusFilter===f.key ? '#fff' : '#6b7280', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            <div style={{ flex:1, overflow:'auto' }}>
               {loading ? (
                 <div style={{ padding:20, color:'#9ca3af', fontSize:12 }}>Yükleniyor...</div>
               ) : findings.length === 0 ? (
@@ -1158,13 +1229,18 @@ export default function Dashboard({ profile, onLogout }) {
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                   <thead>
                     <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
-                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'Yorumlar', 'Tarih', isPentest ? 'İşlem' : null].filter(Boolean).map(h => (
+                      {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'SLA', 'Gün Açık', 'Yorumlar', isPentest ? 'İşlem' : null].filter(Boolean).map(h => (
                         <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:400 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {findings.map(f => (
+                    {findings.filter(f => {
+                        if (levelFilter && f.level !== levelFilter) return false
+                        if (statusFilter && f.status !== statusFilter) return false
+                        if (searchQuery && !f.title?.toLowerCase().includes(searchQuery.toLowerCase()) && !f.finding_id?.toLowerCase().includes(searchQuery.toLowerCase()) && !f.impact_category?.toLowerCase().includes(searchQuery.toLowerCase())) return false
+                        return true
+                      }).map(f => (
                       <tr key={f.id} onClick={() => openModal(f)} style={{ cursor:'pointer', borderBottom:'0.5px solid #f3f4f6' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -1188,7 +1264,22 @@ export default function Dashboard({ profile, onLogout }) {
                             💬 {comments[f.id]?.length || 0}
                           </span>
                         </td>
-                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, color:'#9ca3af' }}>{f.created_at?.slice(0, 10)}</td>
+                        <td style={{ padding:'10px' }}>
+                          {(() => {
+                            const isBreached = (f.level==='kritik'||f.level==='yuksek') && f.status!=='kapali'
+                            const isOnTrack = f.status==='kapali'
+                            return isOnTrack ? (
+                              <span style={{ fontSize:10, padding:'3px 8px', borderRadius:5, background:'#f0fdf4', color:'#16a34a', border:'1px solid #bbf7d0', fontWeight:500 }}>✓ Tamam</span>
+                            ) : isBreached ? (
+                              <span style={{ fontSize:10, padding:'3px 8px', borderRadius:5, background:'#fef2f2', color:'#dc2626', border:'1px solid #fecaca', fontWeight:500 }}>⚠ İhlal</span>
+                            ) : (
+                              <span style={{ fontSize:10, padding:'3px 8px', borderRadius:5, background:'#f9fafb', color:'#6b7280', border:'1px solid #e5e7eb' }}>—</span>
+                            )
+                          })()}
+                        </td>
+                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12, fontWeight:700, color: (() => { const days = Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24)); return days > 14 ? '#dc2626' : days > 7 ? '#ca8a04' : '#16a34a' })() }}>
+                          {Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24))}g
+                        </td>
                         {isPentest && (
                           <td style={{ padding:'10px' }} onClick={e => e.stopPropagation()}>
                             <div style={{ display:'flex', gap:6 }}>
@@ -1202,6 +1293,7 @@ export default function Dashboard({ profile, onLogout }) {
                   </tbody>
                 </table>
               )}
+            </div>
             </div>
           </>
         )}
