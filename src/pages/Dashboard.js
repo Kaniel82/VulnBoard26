@@ -778,7 +778,7 @@ export default function Dashboard({ profile, onLogout }) {
 
   const submitFinding = async () => {
     if (!newFinding.title) return
-    const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
+    const findingId = 'VULN-' + Date.now().toString().slice(-6)
     await supabase.from('findings').insert({
       ...newFinding,
       finding_id: findingId,
