@@ -778,7 +778,7 @@ export default function Dashboard({ profile, onLogout }) {
 
   const submitFinding = async () => {
     if (!newFinding.title) return
-    const findingId = 'VULN-' + Date.now().toString().slice(-6)
+    const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
     await supabase.from('findings').insert({
       ...newFinding,
       finding_id: findingId,
@@ -992,9 +992,9 @@ export default function Dashboard({ profile, onLogout }) {
                 <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Zafiyet Dağılımı</div>
                 <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Seviyeye göre açık bulgular</div>
                 <div style={{ display:'flex', gap:24, alignItems:'center' }}>
-                  <div style={{ position:'relative', width:110, height:110, flexShrink:0 }}>
-                  <svg viewBox="0 0 36 36" style={{ width:110, height:110, transform:'rotate(-90deg)', position:'absolute', top:0, left:0 }}>
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="5" />
+                  <div style={{ position:'relative', width:130, height:130, flexShrink:0 }}>
+                  <svg viewBox="0 0 36 36" style={{ width:130, height:130, transform:'rotate(-90deg)', position:'absolute', top:0, left:0 }}>
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="3.5" />
                     {(() => {
                       const total = findings.length || 1
                       const segs = [
@@ -1010,7 +1010,7 @@ export default function Dashboard({ profile, onLogout }) {
                         const pct = seg.count/total
                         const dash = pct*circ
                         const gap = circ-dash
-                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
+                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="3.5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
                         offset += pct
                         return el
                       })
@@ -1050,9 +1050,9 @@ export default function Dashboard({ profile, onLogout }) {
                 <div style={{ fontSize:13, fontWeight:700, color:'#111', marginBottom:4 }}>Durum Dağılımı</div>
                 <div style={{ fontSize:11, color:'#9ca3af', marginBottom:20 }}>Açık / Devam / Kapatıldı</div>
                 <div style={{ display:'flex', gap:24, alignItems:'center' }}>
-                  <div style={{ position:'relative', width:110, height:110, flexShrink:0 }}>
-                  <svg viewBox="0 0 36 36" style={{ width:110, height:110, transform:'rotate(-90deg)', position:'absolute', top:0, left:0 }}>
-                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="5" />
+                  <div style={{ position:'relative', width:130, height:130, flexShrink:0 }}>
+                  <svg viewBox="0 0 36 36" style={{ width:130, height:130, transform:'rotate(-90deg)', position:'absolute', top:0, left:0 }}>
+                    <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#f3f4f6" strokeWidth="3.5" />
                     {(() => {
                       const total = findings.length || 1
                       const segs = [
@@ -1067,7 +1067,7 @@ export default function Dashboard({ profile, onLogout }) {
                         const pct = seg.count/total
                         const dash = pct*circ
                         const gap = circ-dash
-                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
+                        const el = <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={seg.color} strokeWidth="3.5" strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset*circ} />
                         offset += pct
                         return el
                       })
