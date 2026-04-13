@@ -7,6 +7,22 @@ export default function Login({ onLogin }) {
   const [role, setRole] = useState('pentest')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
+
+  const handleForgot = async () => {
+    if (!forgotEmail) { setError('E-posta adresinizi girin.'); return }
+    setForgotLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: window.location.origin
+    })
+    if (error) { setError(error.message); setForgotLoading(false); return }
+    setForgotSent(true)
+    setForgotLoading(false)
+  }
 
   const handleLogin = async () => {
     if (!email || !password) { setError('E-posta ve şifre gerekli.'); return }
@@ -228,6 +244,14 @@ export default function Login({ onLogin }) {
           />
         </div>
 
+        {/* Forgot Password Link */}
+        <div style={{ textAlign:'right', marginTop:-20, marginBottom:20 }}>
+          <span onClick={() => { setForgotMode(true); setError(''); setForgotSent(false) }}
+            style={{ fontSize:12, color:'#6b7280', cursor:'pointer', textDecoration:'underline' }}>
+            Şifremi Unuttum
+          </span>
+        </div>
+
         {/* Submit */}
         <button onClick={handleLogin} disabled={loading} style={{
           width: '100%', background: loading ? '#6b7280' : '#111',
@@ -252,6 +276,49 @@ export default function Login({ onLogin }) {
           <span>v1.0 Beta</span>
         </div>
       </div>
+      {/* Forgot Password Modal */}
+      {forgotMode && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ background:'#fff', borderRadius:12, padding:'32px 36px', width:400, maxWidth:'100%', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div style={{ fontSize:18, fontWeight:700, color:'#111', marginBottom:8 }}>Şifremi Unuttum</div>
+            {forgotSent ? (
+              <>
+                <div style={{ fontSize:13, color:'#16a34a', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'12px 16px', marginBottom:20 }}>
+                  ✅ Şifre sıfırlama linki <strong>{forgotEmail}</strong> adresine gönderildi. E-postanı kontrol et!
+                </div>
+                <button onClick={() => setForgotMode(false)} style={{ width:'100%', background:'#111', color:'#fff', border:'none', padding:'11px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                  Tamam
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize:13, color:'#6b7280', marginBottom:20 }}>E-posta adresini gir, sana şifre sıfırlama linki gönderelim.</p>
+                {error && (
+                  <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderLeft:'3px solid #dc2626', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16 }}>
+                    {error}
+                  </div>
+                )}
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ display:'block', fontSize:12, color:'#374151', fontWeight:500, marginBottom:6 }}>E-posta</label>
+                  <input value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleForgot()}
+                    placeholder="ornek@firma.com"
+                    style={{ width:'100%', background:'#f9fafb', border:'1.5px solid #e5e7eb', borderRadius:8, padding:'11px 14px', color:'#111', fontSize:14, outline:'none', boxSizing:'border-box' }} />
+                </div>
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={() => { setForgotMode(false); setError('') }} style={{ flex:1, background:'transparent', border:'1.5px solid #e5e7eb', color:'#6b7280', padding:'11px', borderRadius:8, fontSize:13, cursor:'pointer' }}>
+                    İptal
+                  </button>
+                  <button onClick={handleForgot} disabled={forgotLoading} style={{ flex:1, background:'#111', color:'#fff', border:'none', padding:'11px', borderRadius:8, fontSize:13, fontWeight:600, cursor: forgotLoading ? 'not-allowed' : 'pointer', opacity: forgotLoading ? 0.7 : 1 }}>
+                    {forgotLoading ? 'Gönderiliyor...' : 'Link Gönder'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
