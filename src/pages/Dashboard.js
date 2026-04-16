@@ -673,6 +673,11 @@ export default function Dashboard({ profile, onLogout }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [levelFilter, setLevelFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [showImport, setShowImport] = useState(false)
+  const [importData, setImportData] = useState([])
+  const [importSource, setImportSource] = useState('')
+  const [importClientId, setImportClientId] = useState('')
+  const [importing, setImporting] = useState(false)
   const [showNewClient, setShowNewClient] = useState(false)
   const [activePage, setActivePage] = useState('dashboard')
   const [loading, setLoading] = useState(true)
@@ -776,6 +781,110 @@ export default function Dashboard({ profile, onLogout }) {
     setNewFinding(prev => ({ ...prev, cvss_score: score.toString() }))
   }
 
+
+  const detectSource = (headers) => {
+    const h = headers.map(x => x.toLowerCase())
+    if (h.includes('plugin id') || h.includes('plugin name')) return 'nessus'
+    if (h.includes('vulnerability id') || h.includes('nexpose id')) return 'nexpose'
+    if (h.includes('qid') || h.includes('qualys')) return 'qualys'
+    return 'generic'
+  }
+
+  const parseCSV = (text) => {
+    const lines = text.trim().split('\n')
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim())
+    const rows = lines.slice(1).map(line => {
+      const vals = []
+      let cur = ''
+      let inQuotes = false
+      for (let c of line) {
+        if (c === '"') inQuotes = !inQuotes
+        else if (c === ',' && !inQuotes) { vals.push(cur.trim()); cur = '' }
+        else cur += c
+      }
+      vals.push(cur.trim())
+      const obj = {}
+      headers.forEach((h, i) => obj[h] = vals[i] || '')
+      return obj
+    })
+    return { headers, rows }
+  }
+
+  const mapToFinding = (row, source) => {
+    const h = Object.keys(row).map(k => k.toLowerCase())
+    const get = (keys) => {
+      for (let k of keys) {
+        const found = Object.keys(row).find(rk => rk.toLowerCase().includes(k))
+        if (found && row[found]) return row[found]
+      }
+      return ''
+    }
+
+    const riskToLevel = (risk) => {
+      const r = (risk || '').toLowerCase()
+      if (r.includes('critical') || r === '4') return 'kritik'
+      if (r.includes('high') || r === '3') return 'yuksek'
+      if (r.includes('medium') || r === '2') return 'orta'
+      return 'dusuk'
+    }
+
+    const cvss = parseFloat(get(['cvss', 'cvss base', 'cvss score', 'cvss_base'])) || null
+    const level = cvss >= 9 ? 'kritik' : cvss >= 7 ? 'yuksek' : cvss >= 4 ? 'orta' : 'dusuk'
+
+    return {
+      title: get(['name', 'title', 'vulnerability title', 'plugin name', 'vuln name']) || 'İsimsiz Bulgu',
+      level: riskToLevel(get(['risk', 'severity', 'risk factor'])) || level || 'orta',
+      status: 'acik',
+      cvss_score: cvss,
+      description: get(['description', 'synopsis', 'vuln description']).slice(0, 500),
+      recommendation: get(['solution', 'remediation', 'fix']).slice(0, 500),
+      references_links: get(['cve', 'cve id', 'references', 'see also']),
+      impact_category: get(['protocol', 'category', 'family', 'plugin family']) || 'Network',
+      technical_details: get(['plugin output', 'proof', 'technical details', 'output']).slice(0, 500),
+    }
+  }
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const text = evt.target.result
+        const { headers, rows } = parseCSV(text)
+        const source = detectSource(headers)
+        setImportSource(source)
+        const mapped = rows.filter(r => Object.values(r).some(v => v)).map(r => mapToFinding(r, source))
+        setImportData(mapped)
+      } catch(err) {
+        alert('CSV okunamadı: ' + err.message)
+      }
+    }
+    reader.readAsText(file, 'UTF-8')
+  }
+
+  const executeImport = async () => {
+    if (!importData.length) return
+    setImporting(true)
+    let success = 0
+    for (let i = 0; i < importData.length; i++) {
+      const finding = importData[i]
+      const findingId = 'VULN-' + Date.now().toString().slice(-6) + i
+      const { error } = await supabase.from('findings').insert({
+        ...finding,
+        finding_id: findingId,
+        client_id: importClientId || null,
+      })
+      if (!error) success++
+      await new Promise(r => setTimeout(r, 50))
+    }
+    setImporting(false)
+    setShowImport(false)
+    setImportData([])
+    fetchFindings()
+    alert(`${success}/${importData.length} bulgu başarıyla içe aktarıldı!`)
+  }
+
   const submitFinding = async () => {
     if (!newFinding.title) return
     const findingId = 'FS-' + String(findings.length + 1).padStart(3, '0')
@@ -819,11 +928,11 @@ export default function Dashboard({ profile, onLogout }) {
   }
 
   const navItems = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'findings', label: isPentest ? 'Tüm Bulgular' : 'Bulgularım' },
-    { key: 'clients', label: 'Müşteriler' },
-    { key: 'reports', label: 'Raporlar' },
-    { key: 'superadmin', label: '⚙️ Super Admin' },
+    { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
+    { key: 'findings', label: isPentest ? 'Tüm Bulgular' : 'Bulgularım', icon: '🛡️' },
+    { key: 'clients', label: 'Müşteriler', icon: '👥' },
+    { key: 'reports', label: 'Raporlar', icon: '📄' },
+    { key: 'superadmin', label: 'Super Admin', icon: '⚙️' },
   ]
 
   return (
@@ -841,7 +950,8 @@ export default function Dashboard({ profile, onLogout }) {
           return (
             <div key={item.key} onClick={() => setActivePage(item.key)}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'0', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.65)', background: activePage===item.key ? 'rgba(255,255,255,0.18)' : 'transparent', borderLeft: 'none', cursor:'pointer', borderRadius:8, margin:'2px 10px', padding:'10px 14px' }}>
-              {item.label}
+              <span style={{ fontSize:14, width:18, textAlign:'center', flexShrink:0 }}>{item.icon}</span>
+              <span>{item.label}</span>
             </div>
           )
         })}
@@ -861,7 +971,10 @@ export default function Dashboard({ profile, onLogout }) {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {isPentest && (activePage === 'findings' || activePage === 'dashboard') && (
-              <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>+ Yeni Bulgu</button>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={() => setShowImport(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>⬆ CSV Import</button>
+                <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>
+              </div>
             )}
             {isPentest && activePage === 'clients' && (
               <button onClick={() => setShowNewClient(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>+ Yeni Müşteri</button>
@@ -1444,6 +1557,112 @@ export default function Dashboard({ profile, onLogout }) {
             <div style={{ padding:'12px 20px', borderTop:'0.5px solid #e5e7eb', display:'flex', justifyContent:'flex-end', flexShrink:0 }}>
               <button onClick={() => setShowModal(false)} style={{ background:'transparent', border:'0.5px solid #e5e7eb', color:'#6b7280', padding:'7px 14px', borderRadius:6, fontSize:11, cursor:'pointer' }}>Kapat</button>
             </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* CSV Import Modal */}
+      {showImport && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ background:'#fff', borderRadius:12, width:640, maxWidth:'100%', maxHeight:'90vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            <div style={{ padding:'20px 24px', borderBottom:'1px solid #f3f4f6', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:700, color:'#111' }}>CSV Import</div>
+                <div style={{ fontSize:12, color:'#9ca3af', marginTop:2 }}>Nessus, Nexpose, Qualys veya generic CSV</div>
+              </div>
+              <button onClick={() => { setShowImport(false); setImportData([]) }} style={{ background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#9ca3af' }}>×</button>
+            </div>
+
+            <div style={{ padding:'20px 24px', flex:1, overflowY:'auto' }}>
+              {importData.length === 0 ? (
+                <div>
+                  <div style={{ border:'2px dashed #e5e7eb', borderRadius:10, padding:'32px', textAlign:'center', marginBottom:16, cursor:'pointer', background:'#f9fafb' }}
+                    onClick={() => document.getElementById('csv-input').click()}>
+                    <div style={{ fontSize:32, marginBottom:8 }}>📂</div>
+                    <div style={{ fontSize:14, fontWeight:500, color:'#374151', marginBottom:4 }}>CSV dosyası seç</div>
+                    <div style={{ fontSize:12, color:'#9ca3af' }}>Nessus, Nexpose, Qualys veya generic CSV</div>
+                    <input id="csv-input" type="file" accept=".csv,.txt" onChange={handleFileUpload} style={{ display:'none' }} />
+                  </div>
+
+                  <div style={{ background:'#f9fafb', borderRadius:8, padding:'14px 16px', marginBottom:16 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:'#374151', marginBottom:8 }}>Desteklenen Formatlar</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                      {[
+                        { tool:'Nessus', cols:'Plugin ID, CVE, CVSS, Risk, Name, Description' },
+                        { tool:'Nexpose', cols:'Vulnerability ID, Title, CVSS Score, Severity' },
+                        { tool:'Qualys', cols:'QID, Title, Severity, CVE ID, CVSS Base' },
+                        { tool:'Generic', cols:'Title/Name, CVSS, Risk/Severity, Description' },
+                      ].map(f => (
+                        <div key={f.tool} style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:6, padding:'10px 12px' }}>
+                          <div style={{ fontSize:12, fontWeight:600, color:'#111', marginBottom:3 }}>{f.tool}</div>
+                          <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>{f.cols}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16, padding:'12px 16px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8 }}>
+                    <span style={{ fontSize:20 }}>✅</span>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:'#16a34a' }}>{importData.length} bulgu tespit edildi</div>
+                      <div style={{ fontSize:11, color:'#6b7280' }}>Kaynak: {importSource.toUpperCase()}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom:16 }}>
+                    <label style={{ display:'block', fontSize:12, color:'#374151', fontWeight:500, marginBottom:6 }}>Müşteri Seç</label>
+                    <select value={importClientId} onChange={e => setImportClientId(e.target.value)}
+                      style={{ width:'100%', background:'#f9fafb', border:'1.5px solid #e5e7eb', borderRadius:8, padding:'9px 12px', fontSize:13, outline:'none', color:'#111' }}>
+                      <option value="">Müşteri seç...</option>
+                      {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+
+                  <div style={{ maxHeight:280, overflowY:'auto', border:'1px solid #e5e7eb', borderRadius:8 }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                      <thead style={{ position:'sticky', top:0, background:'#f9fafb' }}>
+                        <tr>
+                          {['Başlık', 'Seviye', 'CVSS', 'Etki Alanı'].map(h => (
+                            <th key={h} style={{ padding:'8px 12px', textAlign:'left', fontSize:11, color:'#6b7280', fontWeight:600, borderBottom:'1px solid #e5e7eb' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importData.slice(0,20).map((f, i) => (
+                          <tr key={i} style={{ borderBottom:'1px solid #f3f4f6' }}>
+                            <td style={{ padding:'8px 12px', color:'#111', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.title}</td>
+                            <td style={{ padding:'8px 12px' }}>
+                              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, background: f.level==='kritik'?'#fef2f2':f.level==='yuksek'?'#fff7ed':f.level==='orta'?'#fefce8':'#f0fdf4', color: f.level==='kritik'?'#dc2626':f.level==='yuksek'?'#ea580c':f.level==='orta'?'#ca8a04':'#16a34a' }}>
+                                {f.level==='kritik'?'Kritik':f.level==='yuksek'?'Yüksek':f.level==='orta'?'Orta':'Düşük'}
+                              </span>
+                            </td>
+                            <td style={{ padding:'8px 12px', fontFamily:'monospace', fontWeight:600, color: f.cvss_score>=9?'#dc2626':f.cvss_score>=7?'#ea580c':f.cvss_score>=4?'#ca8a04':'#16a34a' }}>{f.cvss_score || '-'}</td>
+                            <td style={{ padding:'8px 12px', color:'#6b7280' }}>{f.impact_category}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importData.length > 20 && (
+                      <div style={{ padding:'8px 12px', fontSize:11, color:'#9ca3af', textAlign:'center' }}>+{importData.length - 20} daha...</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {importData.length > 0 && (
+              <div style={{ padding:'16px 24px', borderTop:'1px solid #f3f4f6', display:'flex', gap:10, justifyContent:'flex-end', flexShrink:0 }}>
+                <button onClick={() => { setImportData([]); setImportSource('') }} style={{ background:'transparent', border:'1.5px solid #e5e7eb', color:'#6b7280', padding:'9px 18px', borderRadius:8, fontSize:13, cursor:'pointer' }}>
+                  Geri
+                </button>
+                <button onClick={executeImport} disabled={importing} style={{ background:'#7f1d1d', color:'#fff', border:'none', padding:'9px 20px', borderRadius:8, fontSize:13, fontWeight:600, cursor: importing?'not-allowed':'pointer', opacity: importing?0.7:1 }}>
+                  {importing ? `İçe Aktarılıyor...` : `${importData.length} Bulguyu İçe Aktar`}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
