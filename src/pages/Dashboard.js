@@ -828,10 +828,10 @@ export default function Dashboard({ profile, onLogout }) {
 
   return (
     <div style={{ display:'flex', height:'100vh', fontFamily:'sans-serif', background:'#f8f9fa' }}>
-      <div style={{ width:210, background:'#fff', borderRight:'0.5px solid #e5e7eb', display:'flex', flexDirection:'column', padding:'20px 0', flexShrink:0 }}>
-        <div style={{ padding:'0 18px 18px', borderBottom:'0.5px solid #e5e7eb', marginBottom:14 }}>
-          <div style={{ fontSize:15, fontWeight:700, color:'#111' }}>VulnBoard</div>
-          <span style={{ fontSize:9, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, marginTop:4, display:'inline-block', ...(isPentest ? { background:'#fef2f2', color:'#dc2626', border:'0.5px solid #fecaca' } : { background:'#eff6ff', color:'#2563eb', border:'0.5px solid #bfdbfe' }) }}>
+      <div style={{ width:220, background:'linear-gradient(180deg, #1e1e2e 0%, #2d1b69 100%)', borderRight:'none', display:'flex', flexDirection:'column', padding:'20px 0', flexShrink:0 }}>
+        <div style={{ padding:'0 18px 18px', borderBottom:'1px solid rgba(255,255,255,0.1)', marginBottom:14 }}>
+          <div style={{ fontSize:15, fontWeight:700, color:'#fff' }}>VulnBoard</div>
+          <span style={{ fontSize:9, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, marginTop:4, display:'inline-block', ...(isPentest ? { background:'rgba(220,38,38,0.2)', color:'#fca5a5', border:'1px solid rgba(220,38,38,0.3)' } : { background:'rgba(37,99,235,0.2)', color:'#93c5fd', border:'1px solid rgba(37,99,235,0.3)' }) }}>
             {isPentest ? 'Pentest Paneli' : 'Müşteri Paneli'}
           </span>
         </div>
@@ -840,14 +840,14 @@ export default function Dashboard({ profile, onLogout }) {
           if (item.key === 'superadmin' && !isSuperAdmin) return null
           return (
             <div key={item.key} onClick={() => setActivePage(item.key)}
-              style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 18px', fontSize:12, color: activePage===item.key ? '#111' : '#6b7280', background: activePage===item.key ? '#f3f4f6' : 'transparent', borderLeft: activePage===item.key ? '2px solid #111' : '2px solid transparent', cursor:'pointer' }}>
+              style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 18px', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.5)', background: activePage===item.key ? 'rgba(255,255,255,0.12)' : 'transparent', borderLeft: activePage===item.key ? '2px solid #a78bfa' : '2px solid transparent', cursor:'pointer', borderRadius:'0 6px 6px 0', marginRight:8 }}>
               {item.label}
             </div>
           )
         })}
         <div style={{ marginTop:'auto', padding:'0 18px' }}>
-          <div style={{ fontSize:11, color:'#9ca3af', marginBottom:8, fontFamily:'monospace' }}>{profile?.email}</div>
-          <button onClick={onLogout} style={{ width:'100%', background:'transparent', border:'0.5px solid #e5e7eb', borderRadius:6, padding:8, fontSize:11, color:'#6b7280', cursor:'pointer' }}>Çıkış Yap</button>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:8, fontFamily:'monospace' }}>{profile?.email}</div>
+          <button onClick={onLogout} style={{ width:'100%', background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, padding:8, fontSize:11, color:'rgba(255,255,255,0.6)', cursor:'pointer' }}>Çıkış Yap</button>
         </div>
       </div>
 
