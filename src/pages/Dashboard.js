@@ -852,7 +852,7 @@ export default function Dashboard({ profile, onLogout }) {
       </div>
 
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        <div style={{ padding:'14px 20px', borderBottom:'0.5px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#fff', flexShrink:0 }}>
+        <div style={{ padding:'12px 24px', borderBottom:'1px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(135deg, #1e1e2e 0%, #2d1b69 100%)', flexShrink:0, minHeight:56 }}>
           <div style={{ fontSize:14, fontWeight:500 }}>
             {activePage === 'dashboard' && 'Dashboard'}
             {activePage === 'findings' && (isPentest ? 'Tüm Bulgular' : 'Bulgularım')}
@@ -861,16 +861,16 @@ export default function Dashboard({ profile, onLogout }) {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             {isPentest && (activePage === 'findings' || activePage === 'dashboard') && (
-              <button onClick={() => setShowNewFinding(true)} style={{ background:'#111', color:'#fff', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>
+              <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>+ Yeni Bulgu</button>
             )}
             {isPentest && activePage === 'clients' && (
-              <button onClick={() => setShowNewClient(true)} style={{ background:'#111', color:'#fff', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Müşteri</button>
+              <button onClick={() => setShowNewClient(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer', backdropFilter:'blur(4px)' }}>+ Yeni Müşteri</button>
             )}
-            <div style={{ display:'flex', alignItems:'center', gap:7, background:'#f3f4f6', border:'0.5px solid #e5e7eb', borderRadius:20, padding:'4px 10px 4px 4px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', borderRadius:20, padding:'4px 10px 4px 4px', backdropFilter:'blur(4px)' }}>
               <div style={{ width:22, height:22, borderRadius:'50%', background: isPentest ? '#dc2626' : '#2563eb', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, color:'#fff', fontWeight:700 }}>
                 {(profile?.full_name || '?').slice(0,2).toUpperCase()}
               </div>
-              <span style={{ fontSize:11, color:'#374151' }}>{profile?.full_name}</span>
+              <span style={{ fontSize:11, color:'#fff' }}>{profile?.full_name}</span>
             </div>
           </div>
         </div>
