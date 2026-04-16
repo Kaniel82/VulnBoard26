@@ -14,7 +14,7 @@ const Badge = ({ type, label }) => {
     devam:  { background:'#faf5ff', color:'#7c3aed', border:'0.5px solid #ddd6fe' },
     kapali: { background:'#f0fdf4', color:'#16a34a', border:'0.5px solid #bbf7d0' },
   }
-  return <span style={{ ...styles[type], display:'inline-block', padding:'2px 7px', borderRadius:4, fontSize:10, fontWeight:500, fontFamily:'monospace' }}>{label}</span>
+  return <span style={{ ...styles[type], display:'inline-block', padding:'3px 10px', borderRadius:5, fontSize:12, fontWeight:500, fontFamily:'monospace' }}>{label}</span>
 }
 
 const calcCVSSScore = (params) => {
@@ -558,7 +558,7 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
         {/* Executive Summary */}
         <div style={{ marginBottom:16 }}>
           <div style={{ fontSize:11, fontWeight:500, color:'#111', textTransform:'uppercase', letterSpacing:'0.5px', fontFamily:'monospace', marginBottom:8, paddingBottom:4, borderBottom:'0.5px solid #e5e7eb' }}>Executive Summary</div>
-          <div style={{ fontSize:12, color:'#374151', lineHeight:1.7 }}>
+          <div style={{ fontSize:13, color:'#374151', lineHeight:1.7 }}>
             {clientName} için gerçekleştirilen penetrasyon testi kapsamında <strong>{stats.total} adet güvenlik açığı</strong> tespit edilmiştir.
             Bulgular arasında {stats.critical} kritik, {stats.high} yüksek, {stats.medium} orta ve {stats.low} düşük seviyeli zafiyet bulunmaktadır.
             Toplam bulgular içinde <strong>{stats.closed} adet ({slaScore}%)</strong> kapatılmıştır.
@@ -1031,7 +1031,7 @@ export default function Dashboard({ profile, onLogout }) {
                       <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <div style={{ width:10, height:10, borderRadius:2, background:s.color, flexShrink:0 }} />
-                          <span style={{ fontSize:12, color:'#374151' }}>{s.label}</span>
+                          <span style={{ fontSize:13, color:'#374151' }}>{s.label}</span>
                         </div>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <div style={{ width:80, height:6, background:'#f3f4f6', borderRadius:3, overflow:'hidden' }}>
@@ -1087,7 +1087,7 @@ export default function Dashboard({ profile, onLogout }) {
                       <div key={s.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <div style={{ width:10, height:10, borderRadius:2, background:s.color, flexShrink:0 }} />
-                          <span style={{ fontSize:12, color:'#374151' }}>{s.label}</span>
+                          <span style={{ fontSize:13, color:'#374151' }}>{s.label}</span>
                         </div>
                         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                           <div style={{ width:80, height:6, background:'#f3f4f6', borderRadius:3, overflow:'hidden' }}>
@@ -1192,7 +1192,7 @@ export default function Dashboard({ profile, onLogout }) {
                   />
                 </div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                  <div style={{ fontSize:11, color:'#6b7280', fontWeight:500, display:'flex', alignItems:'center' }}>SEVİYE:</div>
+                  <div style={{ fontSize:12, color:'#6b7280', fontWeight:600, display:'flex', alignItems:'center' }}>SEVİYE:</div>
                   {[
                     { key:'', label:'Tümü', color:'#6b7280', bg:'#f3f4f6' },
                     { key:'kritik', label:'Kritik', color:'#dc2626', bg:'#fef2f2' },
@@ -1201,11 +1201,11 @@ export default function Dashboard({ profile, onLogout }) {
                     { key:'dusuk', label:'Düşük', color:'#16a34a', bg:'#f0fdf4' },
                   ].map(f => (
                     <button key={f.key} onClick={() => setLevelFilter(f.key)}
-                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${levelFilter===f.key ? f.color : '#e5e7eb'}`, background: levelFilter===f.key ? f.bg : '#fff', color: levelFilter===f.key ? f.color : '#6b7280', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${levelFilter===f.key ? f.color : '#e5e7eb'}`, background: levelFilter===f.key ? f.bg : '#fff', color: levelFilter===f.key ? f.color : '#6b7280', fontSize:12, fontWeight:500, cursor:'pointer' }}>
                       {f.label}
                     </button>
                   ))}
-                  <div style={{ fontSize:11, color:'#6b7280', fontWeight:500, display:'flex', alignItems:'center', marginLeft:8 }}>DURUM:</div>
+                  <div style={{ fontSize:12, color:'#6b7280', fontWeight:600, display:'flex', alignItems:'center', marginLeft:8 }}>DURUM:</div>
                   {[
                     { key:'', label:'Tümü' },
                     { key:'acik', label:'Açık' },
@@ -1213,7 +1213,7 @@ export default function Dashboard({ profile, onLogout }) {
                     { key:'kapali', label:'Kapatıldı' },
                   ].map(f => (
                     <button key={f.key} onClick={() => setStatusFilter(f.key)}
-                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${statusFilter===f.key ? '#111' : '#e5e7eb'}`, background: statusFilter===f.key ? '#111' : '#fff', color: statusFilter===f.key ? '#fff' : '#6b7280', fontSize:11, fontWeight:500, cursor:'pointer' }}>
+                      style={{ padding:'4px 12px', borderRadius:6, border:`1px solid ${statusFilter===f.key ? '#111' : '#e5e7eb'}`, background: statusFilter===f.key ? '#111' : '#fff', color: statusFilter===f.key ? '#fff' : '#6b7280', fontSize:12, fontWeight:500, cursor:'pointer' }}>
                       {f.label}
                     </button>
                   ))}
@@ -1230,7 +1230,7 @@ export default function Dashboard({ profile, onLogout }) {
                   <thead>
                     <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
                       {['ID', isPentest ? 'Müşteri' : null, 'Başlık', 'Seviye', 'CVSS', 'Etki Alanı', 'Durum', 'SLA', 'Gün Açık', 'Yorumlar', isPentest ? 'İşlem' : null].filter(Boolean).map(h => (
-                        <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:400 }}>{h}</th>
+                        <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:600 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1241,14 +1241,14 @@ export default function Dashboard({ profile, onLogout }) {
                         if (searchQuery && !f.title?.toLowerCase().includes(searchQuery.toLowerCase()) && !f.finding_id?.toLowerCase().includes(searchQuery.toLowerCase()) && !f.impact_category?.toLowerCase().includes(searchQuery.toLowerCase())) return false
                         return true
                       }).map(f => (
-                      <tr key={f.id} onClick={() => openModal(f)} style={{ cursor:'pointer', borderBottom:'0.5px solid #f3f4f6' }}
+                      <tr key={f.id} onClick={() => openModal(f)} style={{ cursor:'pointer', borderBottom:'1px solid #f3f4f6', height:52 }}
                         onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ padding:'10px', fontFamily:'monospace', color:'#9ca3af', fontSize:11 }}>{f.finding_id}</td>
-                        {isPentest && <td style={{ padding:'10px', fontSize:11, color:'#6b7280' }}>{f.clients?.name || '-'}</td>}
+                        <td style={{ padding:'12px 10px', fontFamily:'monospace', color:'#9ca3af', fontSize:13 }}>{f.finding_id}</td>
+                        {isPentest && <td style={{ padding:'12px 10px', fontSize:13, color:'#6b7280' }}>{f.clients?.name || '-'}</td>}
                         <td style={{ padding:'10px', color:'#374151' }}>{f.title}</td>
                         <td style={{ padding:'10px' }}><Badge type={f.level} label={levelLabel[f.level]} /></td>
-                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:11, fontWeight:500, color: getCvssColor(f.cvss_score) }}>{f.cvss_score || '-'}</td>
+                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:13, fontWeight:600, color: getCvssColor(f.cvss_score) }}>{f.cvss_score || '-'}</td>
                         <td style={{ padding:'10px' }}>
                           {f.impact_category ? (
                             <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
@@ -1277,7 +1277,7 @@ export default function Dashboard({ profile, onLogout }) {
                             )
                           })()}
                         </td>
-                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12, fontWeight:700, color: (() => { const days = Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24)); return days > 14 ? '#dc2626' : days > 7 ? '#ca8a04' : '#16a34a' })() }}>
+                        <td style={{ padding:'10px', fontFamily:'monospace', fontSize:13, fontWeight:700, color: (() => { const days = Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24)); return days > 14 ? '#dc2626' : days > 7 ? '#ca8a04' : '#16a34a' })() }}>
                           {Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24))}g
                         </td>
                         {isPentest && (
@@ -1307,7 +1307,7 @@ export default function Dashboard({ profile, onLogout }) {
                 <thead>
                   <tr style={{ borderBottom:'0.5px solid #e5e7eb' }}>
                     {['Şirket Adı', 'Email', 'Kayıt Tarihi'].map(h => (
-                      <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:400 }}>{h}</th>
+                      <th key={h} style={{ padding:'8px 10px', textAlign:'left', fontSize:11, color:'#6b7280', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1358,14 +1358,14 @@ export default function Dashboard({ profile, onLogout }) {
               {selectedFinding.description && (
                 <div style={{ marginBottom:12, padding:'10px 12px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6 }}>
                   <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Açıklama</div>
-                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.description}</div>
+                  <div style={{ fontSize:13, color:'#374151', lineHeight:1.6 }}>{selectedFinding.description}</div>
                 </div>
               )}
 
               {selectedFinding.observation && (
                 <div style={{ marginBottom:12, padding:'10px 12px', background:'#f9fafb', border:'0.5px solid #e5e7eb', borderRadius:6 }}>
                   <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Gözlem</div>
-                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.observation}</div>
+                  <div style={{ fontSize:13, color:'#374151', lineHeight:1.6 }}>{selectedFinding.observation}</div>
                 </div>
               )}
 
@@ -1379,7 +1379,7 @@ export default function Dashboard({ profile, onLogout }) {
               {selectedFinding.recommendation && (
                 <div style={{ marginBottom:12, padding:'10px 12px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:6 }}>
                   <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Tavsiye</div>
-                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.recommendation}</div>
+                  <div style={{ fontSize:13, color:'#374151', lineHeight:1.6 }}>{selectedFinding.recommendation}</div>
                 </div>
               )}
 
@@ -1399,7 +1399,7 @@ export default function Dashboard({ profile, onLogout }) {
               {selectedFinding.closure_note && (
                 <div style={{ marginBottom:12, padding:'10px 12px', background:'#f0fdf4', border:'0.5px solid #bbf7d0', borderRadius:6 }}>
                   <div style={{ fontSize:10, color:'#16a34a', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6 }}>Kapanış Notu</div>
-                  <div style={{ fontSize:12, color:'#374151', lineHeight:1.6 }}>{selectedFinding.closure_note}</div>
+                  <div style={{ fontSize:13, color:'#374151', lineHeight:1.6 }}>{selectedFinding.closure_note}</div>
                 </div>
               )}
               <div style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
@@ -1425,7 +1425,7 @@ export default function Dashboard({ profile, onLogout }) {
                           </div>
                           <span style={{ fontSize:10, color:'#9ca3af', fontFamily:'monospace' }}>{c.created_at?.slice(0, 16).replace('T', ' ')}</span>
                         </div>
-                        <div style={{ fontSize:12, color:'#374151', lineHeight:1.5 }}>{c.content}</div>
+                        <div style={{ fontSize:13, color:'#374151', lineHeight:1.5 }}>{c.content}</div>
                       </div>
                     </div>
                   ))
