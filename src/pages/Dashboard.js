@@ -827,9 +827,9 @@ export default function Dashboard({ profile, onLogout }) {
   ]
 
   return (
-    <div style={{ display:'flex', height:'100vh', fontFamily:'sans-serif', background:'#f8f9fa' }}>
-      <div style={{ width:220, background:'linear-gradient(180deg, #dc2626 0%, #ef4444 50%, #fca5a5 100%)', borderRight:'none', display:'flex', flexDirection:'column', padding:'20px 0', flexShrink:0 }}>
-        <div style={{ padding:'0 18px 18px', borderBottom:'1px solid rgba(255,255,255,0.2)', marginBottom:14 }}>
+    <div style={{ display:'flex', height:'100vh', fontFamily:'sans-serif', background:'#f5f5f5' }}>
+      <div style={{ width:220, background:'#7f1d1d', borderRight:'none', boxShadow:'2px 0 12px rgba(0,0,0,0.2)', display:'flex', flexDirection:'column', padding:'20px 0', flexShrink:0 }}>
+        <div style={{ padding:'0 18px 16px', borderBottom:'1px solid rgba(255,255,255,0.15)', marginBottom:12 }}>
           <div style={{ fontSize:15, fontWeight:700, color:'#fff' }}>VulnBoard</div>
           <span style={{ fontSize:9, fontFamily:'monospace', padding:'2px 6px', borderRadius:4, marginTop:4, display:'inline-block', ...(isPentest ? { background:'rgba(255,255,255,0.2)', color:'#fff', border:'1px solid rgba(255,255,255,0.4)' } : { background:'rgba(255,255,255,0.2)', color:'#fff', border:'1px solid rgba(255,255,255,0.4)' }) }}>
             {isPentest ? 'Pentest Paneli' : 'Müşteri Paneli'}
@@ -840,7 +840,7 @@ export default function Dashboard({ profile, onLogout }) {
           if (item.key === 'superadmin' && !isSuperAdmin) return null
           return (
             <div key={item.key} onClick={() => setActivePage(item.key)}
-              style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 18px', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.7)', background: activePage===item.key ? 'rgba(255,255,255,0.2)' : 'transparent', borderLeft: activePage===item.key ? '2px solid #fff' : '2px solid transparent', cursor:'pointer', borderRadius:'0 6px 6px 0', marginRight:8 }}>
+              style={{ display:'flex', alignItems:'center', gap:9, padding:'0', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.65)', background: activePage===item.key ? 'rgba(255,255,255,0.18)' : 'transparent', borderLeft: 'none', cursor:'pointer', borderRadius:8, margin:'2px 10px', padding:'10px 14px' }}>
               {item.label}
             </div>
           )
@@ -852,7 +852,7 @@ export default function Dashboard({ profile, onLogout }) {
       </div>
 
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        <div style={{ padding:'12px 24px', borderBottom:'1px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between', background:'linear-gradient(90deg, #ef4444 0%, #f87171 50%, #fecaca 100%)', flexShrink:0, minHeight:56 }}>
+        <div style={{ padding:'12px 24px', borderBottom:'1px solid #e5e7eb', display:'flex', alignItems:'center', justifyContent:'space-between', background:'#7f1d1d', flexShrink:0, minHeight:56 }}>
           <div style={{ fontSize:14, fontWeight:500 }}>
             {activePage === 'dashboard' && 'Dashboard'}
             {activePage === 'findings' && (isPentest ? 'Tüm Bulgular' : 'Bulgularım')}
@@ -877,7 +877,7 @@ export default function Dashboard({ profile, onLogout }) {
 
 
         {activePage === 'dashboard' && (
-          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f8f9fa' }}>
+          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f5f5f5' }}>
 
             {/* Row 1 — Main Stats */}
             <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:16, marginBottom:16, alignItems:'stretch' }}>
