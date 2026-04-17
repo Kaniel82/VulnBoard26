@@ -688,6 +688,15 @@ export default function Dashboard({ profile, onLogout }) {
   const [newClient, setNewClient] = useState({ name:'', email:'', password:'', full_name:'' })
   const [cvssParams, setCvssParams] = useState({ av:'0.85', ac:'0.77', pr:'0.85', ui:'0.85', c:'0.56', i:'0.56' })
 
+  const [lang, setLang] = useState('tr')
+  const [now, setNow] = useState(new Date())
+  
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const T = (tr, en) => lang === 'tr' ? tr : en
   const isPentest = profile?.role === 'pentest' || profile?.role === 'superadmin'
   const isSuperAdmin = profile?.role === 'superadmin'
   const levelLabel = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
@@ -928,11 +937,11 @@ export default function Dashboard({ profile, onLogout }) {
   }
 
   const navItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: '🏠' },
-    { key: 'findings', label: isPentest ? 'Tüm Bulgular' : 'Bulgularım', icon: '🛡️' },
-    { key: 'clients', label: 'Müşteriler', icon: '👥' },
-    { key: 'reports', label: 'Raporlar', icon: '📄' },
-    { key: 'superadmin', label: 'Super Admin', icon: '⚙️' },
+    { key: 'dashboard', label: T('Dashboard','Dashboard'), icon: '🏠', badge: null },
+    { key: 'findings', label: T(isPentest ? 'Tüm Bulgular' : 'Bulgularım', isPentest ? 'Vulnerabilities' : 'My Findings'), icon: '🛡️', badge: findings.filter(f=>f.status!=='kapali').length || null },
+    { key: 'clients', label: T('Müşteriler','Clients'), icon: '👥', badge: null },
+    { key: 'reports', label: T('Raporlar','Reports'), icon: '📄', badge: null },
+    { key: 'superadmin', label: T('Super Admin','Super Admin'), icon: '⚙️', badge: null },
   ]
 
   return (
@@ -944,6 +953,9 @@ export default function Dashboard({ profile, onLogout }) {
             {isPentest ? 'Pentest Paneli' : 'Müşteri Paneli'}
           </span>
         </div>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', fontFamily:'monospace', letterSpacing:'0.12em', padding:'0 18px', marginBottom:6 }}>
+          {T('ANA MENÜ','MAIN MENU')}
+        </div>
         {navItems.map(item => {
           if (item.key === 'clients' && !isPentest) return null
           if (item.key === 'superadmin' && !isSuperAdmin) return null
@@ -951,7 +963,10 @@ export default function Dashboard({ profile, onLogout }) {
             <div key={item.key} onClick={() => setActivePage(item.key)}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'0', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.65)', background: activePage===item.key ? 'rgba(255,255,255,0.18)' : 'transparent', borderLeft: 'none', cursor:'pointer', borderRadius:8, margin:'2px 10px', padding:'10px 14px' }}>
               <span style={{ fontSize:14, width:18, textAlign:'center', flexShrink:0 }}>{item.icon}</span>
-              <span>{item.label}</span>
+              <span style={{ flex:1 }}>{item.label}</span>
+              {item.badge > 0 && (
+                <span style={{ background:'#dc2626', color:'#fff', fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:10, minWidth:18, textAlign:'center' }}>{item.badge}</span>
+              )}
             </div>
           )
         })}
@@ -969,11 +984,28 @@ export default function Dashboard({ profile, onLogout }) {
             {activePage === 'clients' && 'Müşteriler'}
             {activePage === 'reports' && 'Raporlar'}
           </div>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {/* Live indicator */}
+            <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', padding:'5px 12px', borderRadius:8 }}>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:'#22c55e', boxShadow:'0 0 6px #22c55e' }} />
+              <span style={{ fontSize:11, color:'#fff', fontWeight:500 }}>{T('Canlı','Live')}</span>
+            </div>
+            {/* Refresh */}
+            <button onClick={fetchFindings} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', color:'#fff', padding:'5px 12px', borderRadius:8, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+              ↻ {T('Yenile','Refresh')}
+            </button>
+            {/* Lang toggle */}
+            <div style={{ display:'flex', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, overflow:'hidden' }}>
+              {['tr','en'].map(l => (
+                <button key={l} onClick={() => setLang(l)} style={{ padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer', background: lang===l ? 'rgba(255,255,255,0.25)' : 'transparent', color:'#fff', border:'none' }}>
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
             {(activePage === 'findings' || activePage === 'dashboard') && (
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={() => setShowImport(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>⬆ CSV Import</button>
-                {isPentest && <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>}
+                <button onClick={() => setShowImport(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>{T('⬆ Import','⬆ Import')}</button>
+                {isPentest && <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.9)', color:'#7f1d1d', border:'none', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:800, cursor:'pointer' }}>+ {T('Yeni Bulgu','Add Vulnerability')}</button>}
               </div>
             )}
             {isPentest && activePage === 'clients' && (
