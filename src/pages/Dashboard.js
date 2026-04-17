@@ -970,10 +970,10 @@ export default function Dashboard({ profile, onLogout }) {
             {activePage === 'reports' && 'Raporlar'}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {isPentest && (activePage === 'findings' || activePage === 'dashboard') && (
+            {(activePage === 'findings' || activePage === 'dashboard') && (
               <div style={{ display:'flex', gap:8 }}>
                 <button onClick={() => setShowImport(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>⬆ CSV Import</button>
-                <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>
+                {isPentest && <button onClick={() => setShowNewFinding(true)} style={{ background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', padding:'7px 14px', borderRadius:6, fontSize:11, fontWeight:700, cursor:'pointer' }}>+ Yeni Bulgu</button>}
               </div>
             )}
             {isPentest && activePage === 'clients' && (
