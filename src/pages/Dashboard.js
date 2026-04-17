@@ -353,7 +353,7 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
     doc.text('Özet İstatistikler', 14, 72)
     autoTable(doc, {
       startY: 76,
-      head: [['Toplam', 'Kritik', 'Yüksek', 'Orta', 'Düşük', T(T('Kapatıldı','Closed'),'Closed')]],
+      head: [['Toplam', 'Kritik', 'Yüksek', 'Orta', 'Düşük', T('Kapatıldı','Closed'),'Closed')]],
       body: [[stats.total, stats.critical, stats.high, stats.medium, stats.low, stats.closed]],
       styles: { fontSize: 10, halign: 'center' },
       headStyles: { fillColor: [17, 17, 17] },
@@ -367,7 +367,7 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
     doc.text('Bulgular', 14, y1)
     
     const levelMap = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
-    const statusMap = { acik:T(T('Açık','Open'),'Open'), devam:T('Devam','In Progress'), kapali:'Kapatıldı' }
+    const statusMap = { acik:T('Açık','Open'),'Open'), devam:T('Devam','In Progress'), kapali:'Kapatıldı' }
 
     autoTable(doc, {
       startY: y1 + 4,
