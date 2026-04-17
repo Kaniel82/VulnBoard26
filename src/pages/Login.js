@@ -11,6 +11,8 @@ export default function Login({ onLogin }) {
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
+  const [kvkkAccepted, setKvkkAccepted] = useState(false)
+  const [showKvkk, setShowKvkk] = useState(false)
 
   const handleForgot = async () => {
     if (!forgotEmail) { setError('E-posta adresinizi girin.'); return }
@@ -26,6 +28,7 @@ export default function Login({ onLogin }) {
 
   const handleLogin = async () => {
     if (!email || !password) { setError('E-posta ve şifre gerekli.'); return }
+    if (!kvkkAccepted) { setError('Devam etmek için KVKK metnini onaylamanız gerekiyor.'); return }
     setLoading(true)
     setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -244,6 +247,24 @@ export default function Login({ onLogin }) {
           />
         </div>
 
+        {/* KVKK Checkbox */}
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:16, padding:'12px 14px', background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:8 }}>
+          <input type="checkbox" id="kvkk" checked={kvkkAccepted} onChange={e => setKvkkAccepted(e.target.checked)}
+            style={{ marginTop:2, width:16, height:16, cursor:'pointer', flexShrink:0 }} />
+          <label htmlFor="kvkk" style={{ fontSize:12, color:'#374151', lineHeight:1.5, cursor:'pointer' }}>
+            <span onClick={e => e.preventDefault()}>
+              <span style={{ color:'#7f1d1d', fontWeight:500, cursor:'pointer', textDecoration:'underline' }} onClick={() => setShowKvkk(true)}>
+                Kişisel Verilerin Korunması (KVKK) Politikası
+              </span>
+              {' '}ve{' '}
+              <span style={{ color:'#7f1d1d', fontWeight:500, cursor:'pointer', textDecoration:'underline' }} onClick={() => setShowKvkk(true)}>
+                Gizlilik Politikası
+              </span>
+              'nı okudum ve kabul ediyorum.
+            </span>
+          </label>
+        </div>
+
         {/* Forgot Password Link */}
         <div style={{ textAlign:'right', marginTop:-20, marginBottom:20 }}>
           <span onClick={() => { setForgotMode(true); setError(''); setForgotSent(false) }}
@@ -276,6 +297,46 @@ export default function Login({ onLogin }) {
           <span>v1.0 Beta</span>
         </div>
       </div>
+
+      {/* KVKK Modal */}
+      {showKvkk && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:60, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+          <div style={{ background:'#fff', borderRadius:12, width:560, maxWidth:'100%', maxHeight:'80vh', display:'flex', flexDirection:'column' }}>
+            <div style={{ padding:'20px 24px', borderBottom:'1px solid #e5e7eb', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:'#111' }}>KVKK & Gizlilik Politikası</div>
+              <button onClick={() => setShowKvkk(false)} style={{ background:'transparent', border:'none', fontSize:20, cursor:'pointer', color:'#9ca3af' }}>×</button>
+            </div>
+            <div style={{ padding:'20px 24px', overflowY:'auto', flex:1, fontSize:13, color:'#374151', lineHeight:1.8 }}>
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', marginBottom:8 }}>1. Veri Sorumlusu</h3>
+              <p>VulnBoard platformu, kişisel verilerinizi 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında işlemektedir.</p>
+              
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', margin:'16px 0 8px' }}>2. Toplanan Veriler</h3>
+              <p>Platform kullanımı sırasında ad-soyad, e-posta adresi ve güvenlik bulgularına ilişkin teknik veriler işlenmektedir.</p>
+
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', margin:'16px 0 8px' }}>3. Verilerin Kullanımı</h3>
+              <p>Verileriniz yalnızca platform hizmetlerinin sunulması amacıyla kullanılır. Üçüncü taraflarla paylaşılmaz.</p>
+
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', margin:'16px 0 8px' }}>4. Veri Güvenliği</h3>
+              <p>Tüm veriler SSL şifreleme ile iletilir ve güvenli sunucularda saklanır. Yetkisiz erişime karşı teknik önlemler alınmıştır.</p>
+
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', margin:'16px 0 8px' }}>5. Haklarınız</h3>
+              <p>KVKK kapsamında verilerinize erişme, düzeltme ve silme hakkına sahipsiniz. Talepleriniz için info@vulnboard.com adresine başvurabilirsiniz.</p>
+
+              <h3 style={{ fontSize:14, fontWeight:700, color:'#111', margin:'16px 0 8px' }}>6. Çerezler</h3>
+              <p>Platform, oturum yönetimi için zorunlu çerezler kullanmaktadır. Pazarlama amaçlı çerez kullanılmamaktadır.</p>
+            </div>
+            <div style={{ padding:'16px 24px', borderTop:'1px solid #e5e7eb', display:'flex', gap:10, justifyContent:'flex-end', flexShrink:0 }}>
+              <button onClick={() => setShowKvkk(false)} style={{ background:'transparent', border:'1.5px solid #e5e7eb', color:'#6b7280', padding:'9px 18px', borderRadius:8, fontSize:13, cursor:'pointer' }}>
+                Kapat
+              </button>
+              <button onClick={() => { setKvkkAccepted(true); setShowKvkk(false) }} style={{ background:'#7f1d1d', color:'#fff', border:'none', padding:'9px 20px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                ✓ Okudum, Kabul Ediyorum
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Forgot Password Modal */}
       {forgotMode && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
