@@ -974,9 +974,20 @@ export default function Dashboard({ profile, onLogout }) {
             </div>
           )
         })}
-        <div style={{ marginTop:'auto', padding:'0 18px' }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:8, fontFamily:'monospace' }}>{profile?.email}</div>
-          <button onClick={onLogout} style={{ width:'100%', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:6, padding:8, fontSize:11, color:'#fff', cursor:'pointer' }}>Çıkış Yap</button>
+        <div style={{ marginTop:'auto', padding:'0 12px 8px' }}>
+          <div style={{ height:1, background:'rgba(255,255,255,0.1)', marginBottom:12 }} />
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 8px', borderRadius:8, background:'rgba(255,255,255,0.08)', marginBottom:8 }}>
+            <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#dc2626,#7f1d1d)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'#fff', fontWeight:700, flexShrink:0 }}>
+              {(profile?.full_name||profile?.email||'?').slice(0,2).toUpperCase()}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.full_name||profile?.email}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:1 }}>
+                {profile?.role==='superadmin' ? T('Süper Admin','Super Admin') : profile?.role==='pentest' ? T('Pentest Uzmanı','Pentest Analyst') : T('Müşteri','Client')}
+              </div>
+            </div>
+            <button onClick={onLogout} title={T('Çıkış','Sign Out')} style={{ background:'transparent', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:18, padding:4, flexShrink:0 }}>→</button>
+          </div>
         </div>
       </div>
 
