@@ -41,7 +41,7 @@ const getCvssColor = (score) => {
 }
 
 const getCvssLabel = (score) => {
-  if (score >= 9) return T('Kritik','Critical')
+  if (score >= 9) return 'Kritik'
   if (score >= 7) return 'Yüksek'
   if (score >= 4) return 'Orta'
   if (score > 0) return 'Düşük'
@@ -353,7 +353,7 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
     doc.text('Özet İstatistikler', 14, 72)
     autoTable(doc, {
       startY: 76,
-      head: [['Toplam', 'Kritik', 'Yüksek', 'Orta', 'Düşük', T('Kapatıldı','Closed'),'Closed')]],
+      head: [['Toplam', 'Kritik', 'Yüksek', 'Orta', 'Düşük', 'Kapatıldı']],
       body: [[stats.total, stats.critical, stats.high, stats.medium, stats.low, stats.closed]],
       styles: { fontSize: 10, halign: 'center' },
       headStyles: { fillColor: [17, 17, 17] },
@@ -367,7 +367,7 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
     doc.text('Bulgular', 14, y1)
     
     const levelMap = { kritik:'Kritik', yuksek:'Yüksek', orta:'Orta', dusuk:'Düşük' }
-    const statusMap = { acik:T('Açık','Open'),'Open'), devam:T('Devam','In Progress'), kapali:'Kapatıldı' }
+    const statusMap = { acik:'Açık', devam:'Devam', kapali:'Kapatıldı' }
 
     autoTable(doc, {
       startY: y1 + 4,
@@ -466,13 +466,13 @@ const ReportsPage = ({ profile, clients, findings, isPentest }) => {
       ['Tarih', new Date().toLocaleDateString('tr-TR')],
       [''],
       ['İstatistikler', ''],
-      [T('Toplam Bulgu','Total Findings'), stats.total],
+      ['Toplam Bulgu', stats.total],
       ['Kritik', stats.critical],
       ['Yüksek', stats.high],
       ['Orta', stats.medium],
       ['Düşük', stats.low],
       ['Kapatıldı', stats.closed],
-      [T('SLA Performansı','SLA Performance'), `${slaScore}%`],
+      ['SLA Performansı', `${slaScore}%`],
     ]
     const ws2 = XLSX.utils.aoa_to_sheet(summaryData)
     ws2['!cols'] = [{wch:20},{wch:30}]
@@ -936,12 +936,9 @@ export default function Dashboard({ profile, onLogout }) {
     closed: findings.filter(f => f.status === 'kapali').length,
   }
 
-  const slaBreaches = findings.filter(f=>(f.level==='kritik'||f.level==='yuksek')&&f.status!=='kapali').length
-
   const navItems = [
     { key: 'dashboard', label: T('Dashboard','Dashboard'), icon: '🏠', badge: null },
     { key: 'findings', label: T(isPentest ? 'Tüm Bulgular' : 'Bulgularım', isPentest ? 'Vulnerabilities' : 'My Findings'), icon: '🛡️', badge: findings.filter(f=>f.status!=='kapali').length || null },
-    { key: 'sla', label: T('SLA Takip','SLA Tracker'), icon: '⏱️', badge: slaBreaches || null },
     { key: 'clients', label: T('Müşteriler','Clients'), icon: '👥', badge: null },
     { key: 'reports', label: T('Raporlar','Reports'), icon: '📄', badge: null },
     { key: 'superadmin', label: T('Super Admin','Super Admin'), icon: '⚙️', badge: null },
@@ -962,7 +959,6 @@ export default function Dashboard({ profile, onLogout }) {
         {navItems.map(item => {
           if (item.key === 'clients' && !isPentest) return null
           if (item.key === 'superadmin' && !isSuperAdmin) return null
-          if (item.key === 'sla' && !isPentest) return null
           return (
             <div key={item.key} onClick={() => setActivePage(item.key)}
               style={{ display:'flex', alignItems:'center', gap:9, padding:'0', fontSize:12, color: activePage===item.key ? '#fff' : 'rgba(255,255,255,0.65)', background: activePage===item.key ? 'rgba(255,255,255,0.18)' : 'transparent', borderLeft: 'none', cursor:'pointer', borderRadius:8, margin:'2px 10px', padding:'10px 14px' }}>
@@ -974,20 +970,9 @@ export default function Dashboard({ profile, onLogout }) {
             </div>
           )
         })}
-        <div style={{ marginTop:'auto', padding:'0 12px 8px' }}>
-          <div style={{ height:1, background:'rgba(255,255,255,0.1)', marginBottom:12 }} />
-          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 8px', borderRadius:8, background:'rgba(255,255,255,0.08)', marginBottom:8 }}>
-            <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#dc2626,#7f1d1d)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'#fff', fontWeight:700, flexShrink:0 }}>
-              {(profile?.full_name||profile?.email||'?').slice(0,2).toUpperCase()}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.full_name||profile?.email}</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:1 }}>
-                {profile?.role==='superadmin' ? T('Süper Admin','Super Admin') : profile?.role==='pentest' ? T('Pentest Uzmanı','Pentest Analyst') : T('Müşteri','Client')}
-              </div>
-            </div>
-            <button onClick={onLogout} title={T('Çıkış','Sign Out')} style={{ background:'transparent', border:'none', color:'rgba(255,255,255,0.5)', cursor:'pointer', fontSize:18, padding:4, flexShrink:0 }}>→</button>
-          </div>
+        <div style={{ marginTop:'auto', padding:'0 18px' }}>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:8, fontFamily:'monospace' }}>{profile?.email}</div>
+          <button onClick={onLogout} style={{ width:'100%', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.3)', borderRadius:6, padding:8, fontSize:11, color:'#fff', cursor:'pointer' }}>Çıkış Yap</button>
         </div>
       </div>
 
@@ -1127,9 +1112,9 @@ export default function Dashboard({ profile, onLogout }) {
                   : 0
 
                 return [
-                  { label:T('ORT. MTTR','AVG MTTR'), value: mttr, unit:'gün', sub:T('Ortalama düzeltme süresi','Mean time to remediate'), color:'#7c3aed', trend: mttr > 7 ? '↗ Yüksek' : '↘ İyi', trendColor: mttr > 7 ? '#dc2626' : '#16a34a' },
-                  { label:T('RİSK ALTINDA','AT RISK'), value: atRisk, unit:'', sub:T('48 saat içinde ihlal','Breach within 48h'), color: atRisk>0?'#dc2626':'#16a34a', trend: atRisk>0?'Acil müdahale':'✓ Güvende', trendColor: atRisk>0?'#dc2626':'#16a34a' },
-                  { label:T('ORT. AÇIK KALMA','AVG AGING'), value: avgAging, unit:'gün', sub:T('Tüm açık bulgular','All open findings'), color: avgAging>14?'#dc2626':avgAging>7?'#ca8a04':'#16a34a', trend: avgAging>14?'↗ Kritik seviye':'↘ Normal', trendColor: avgAging>14?'#dc2626':'#16a34a' },
+                  { label:'ORT. MTTR', value: mttr, unit:'gün', sub:'Ortalama düzeltme süresi', color:'#7c3aed', trend: mttr > 7 ? '↗ Yüksek' : '↘ İyi', trendColor: mttr > 7 ? '#dc2626' : '#16a34a' },
+                  { label:'RİSK ALTINDA', value: atRisk, unit:'', sub:'48 saat içinde ihlal', color: atRisk>0?'#dc2626':'#16a34a', trend: atRisk>0?'Acil müdahale':'✓ Güvende', trendColor: atRisk>0?'#dc2626':'#16a34a' },
+                  { label:'ORT. AÇIK KALMA', value: avgAging, unit:'gün', sub:'Tüm açık bulgular', color: avgAging>14?'#dc2626':avgAging>7?'#ca8a04':'#16a34a', trend: avgAging>14?'↗ Kritik seviye':'↘ Normal', trendColor: avgAging>14?'#dc2626':'#16a34a' },
                 ].map((item,i) => (
                   <div key={i} style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
                     <div style={{ fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:6 }}>{item.label}</div>
@@ -1456,78 +1441,6 @@ export default function Dashboard({ profile, onLogout }) {
             </div>
             </div>
           </>
-        )}
-
-
-        {activePage === 'sla' && (
-          <div style={{ flex:1, overflow:'auto', padding:'24px', background:'#f5f5f5' }}>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16, marginBottom:16 }}>
-              {[
-                { label: T('Kritik SLA','Critical SLA'), target: T('24 saat','24 hours'), color:'#dc2626',
-                  closed: findings.filter(f=>f.level==='kritik'&&f.status==='kapali').length,
-                  total: findings.filter(f=>f.level==='kritik').length },
-                { label: T('Yüksek SLA','High SLA'), target: T('7 gün','7 days'), color:'#ea580c',
-                  closed: findings.filter(f=>f.level==='yuksek'&&f.status==='kapali').length,
-                  total: findings.filter(f=>f.level==='yuksek').length },
-                { label: T('Orta SLA','Medium SLA'), target: T('30 gün','30 days'), color:'#ca8a04',
-                  closed: findings.filter(f=>f.level==='orta'&&f.status==='kapali').length,
-                  total: findings.filter(f=>f.level==='orta').length },
-              ].map(item => {
-                const rate = item.total > 0 ? Math.round((item.closed/item.total)*100) : 0
-                const color = rate>=80?'#16a34a':rate>=50?'#ca8a04':'#dc2626'
-                return (
-                  <div key={item.label} style={{ background:'#fff', borderRadius:12, padding:'24px', border:'1px solid #e5e7eb' }}>
-                    <div style={{ fontSize:11, fontWeight:600, color:item.color, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>{item.label}</div>
-                    <div style={{ fontSize:11, color:'#9ca3af', marginBottom:16 }}>{T('Hedef:','Target:')} {item.target}</div>
-                    <div style={{ fontSize:40, fontWeight:800, color, marginBottom:8 }}>{rate}%</div>
-                    <div style={{ height:8, background:'#f3f4f6', borderRadius:4, overflow:'hidden', marginBottom:8 }}>
-                      <div style={{ height:'100%', width:`${rate}%`, background:color, borderRadius:4 }} />
-                    </div>
-                    <div style={{ fontSize:12, color:'#9ca3af', fontFamily:'monospace' }}>{item.closed}/{item.total} {T('kapatıldı','closed')}</div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div style={{ background:'#fff', borderRadius:12, border:'1px solid #e5e7eb', overflow:'hidden' }}>
-              <div style={{ padding:'16px 20px', borderBottom:'1px solid #f3f4f6' }}>
-                <div style={{ fontSize:14, fontWeight:700, color:'#111' }}>
-                  {T('SLA İhlali Riski Olan Bulgular','Findings at SLA Risk')}
-                </div>
-              </div>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-                <thead>
-                  <tr style={{ borderBottom:'1px solid #f3f4f6' }}>
-                    {[T('ID','ID'), T('Başlık','Title'), T('Seviye','Severity'), T('CVSS','CVSS'), T('Gün Açık','Days Open')].map(h => (
-                      <th key={h} style={{ padding:'10px 16px', textAlign:'left', fontSize:11, color:'#6b7280', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {findings.filter(f=>(f.level==='kritik'||f.level==='yuksek')&&f.status!=='kapali').map(f => (
-                    <tr key={f.id} style={{ borderBottom:'1px solid #f9fafb' }}>
-                      <td style={{ padding:'12px 16px', fontFamily:'monospace', fontSize:12, color:'#9ca3af' }}>{f.finding_id}</td>
-                      <td style={{ padding:'12px 16px', color:'#111', fontWeight:500 }}>{f.title}</td>
-                      <td style={{ padding:'12px 16px' }}>
-                        <span style={{ fontSize:11, padding:'3px 10px', borderRadius:5, background: f.level==='kritik'?'#fef2f2':'#fff7ed', color: f.level==='kritik'?'#dc2626':'#ea580c', fontWeight:500 }}>
-                          {f.level==='kritik' ? T('Kritik','Critical') : T('Yüksek','High')}
-                        </span>
-                      </td>
-                      <td style={{ padding:'12px 16px', fontFamily:'monospace', fontWeight:700, color: f.cvss_score>=9?'#dc2626':'#ea580c' }}>{f.cvss_score||'-'}</td>
-                      <td style={{ padding:'12px 16px', fontFamily:'monospace', fontWeight:700, color:'#dc2626' }}>
-                        {Math.floor((new Date()-new Date(f.created_at))/(1000*60*60*24))}{T('g','d')}
-                      </td>
-                    </tr>
-                  ))}
-                  {findings.filter(f=>(f.level==='kritik'||f.level==='yuksek')&&f.status!=='kapali').length === 0 && (
-                    <tr><td colSpan={5} style={{ padding:24, textAlign:'center', color:'#9ca3af' }}>
-                      ✅ {T('SLA ihlali riski yok!','No SLA risks!')}
-                    </td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         )}
 
         {activePage === 'clients' && (
