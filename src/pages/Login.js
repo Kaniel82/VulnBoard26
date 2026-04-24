@@ -27,7 +27,6 @@ export default function Login({ onLogin }) {
 
   const handleLogin = async () => {
     if (!email || !password) { setError('E-posta ve şifre gerekli.'); return }
-    if (role === 'pentest' && !firma.trim()) { setError('Firma adı gerekli.'); return }
     if (!kvkkAccepted) { setError('Devam etmek için KVKK metnini onaylamanız gerekiyor.'); return }
     setLoading(true); setError('')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -209,22 +208,6 @@ export default function Login({ onLogin }) {
             fontSize:13, color:'#dc2626', marginBottom:18,
           }}>
             ⚠️ {error}
-          </div>
-        )}
-
-        {/* Firma field — only for pentest */}
-        {role === 'pentest' && (
-          <div style={{ marginBottom:16 }}>
-            <label style={{ display:'block', fontSize:12, color:'#374151', fontWeight:600, marginBottom:6 }}>
-              Firma Adı <span style={{ color:'#dc2626' }}>*</span>
-            </label>
-            <input
-              value={firma} onChange={e => setFirma(e.target.value)}
-              placeholder="Şirketinizin adını girin"
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor='#7f1d1d'}
-              onBlur={e => e.target.style.borderColor='#e5e7eb'}
-            />
           </div>
         )}
 
