@@ -181,7 +181,7 @@ export default function Login({ onLogin }) {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {[
-              { key:'pentest', label:'Pentest Firması', icon:'🔐' },
+              { key:'pentest', label:'Firma', icon:'🔐' },
               { key:'client',  label:'Müşteri',          icon:'🏢' },
             ].map(r => (
               <button key={r.key} onClick={() => { setRole(r.key); setError('') }} style={{
